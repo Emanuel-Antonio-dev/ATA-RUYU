@@ -1,0 +1,533 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+// ============================================================
+// ACADEMY
+// ============================================================
+
+model Academy {
+  id               String        @id @default(uuid())
+  type             AcademyType
+  status           AcademyStatus @default(PENDING)
+  name             String
+
+  affiliateNumber  String?       @unique
+
+  email            String        @unique
+  phone            String?
+  address          String?
+  province         String?
+  city             String?
+  logoUrl          String?
+
+  approvedById     String?
+  approvedAt       DateTime?
+  rejectedReason   String?
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relações
+  users            User[]
+  athletes         Athlete[]
+  subscription     Subscription?
+  downloadKeys     DownloadKey[]
+  championships    Championship[]
+  approvedBy       User?         @relation("AcademyApprovals", fields: [approvedById], references: [id])
+
+  @@map("tbl_academies")
+}
+
+// ============================================================
+// ACCOUNTS
+// ============================================================
+
+model Account {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  phone        String?   @unique
+  passwordHash String
+
+  isActive     Boolean   @default(true)
+  isVerified   Boolean   @default(false)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relações
+  user            User?
+  authentications Authentication[]
+
+  @@map("tbl_accounts")
+}
+
+// ============================================================
+// USERS
+// ============================================================
+
+model User {
+  id          String    @id @default(uuid())
+  accountId   String    @unique
+  academyId   String
+  role        UserRole
+
+  fullName    String
+  photoUrl    String?
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relações
+  account           Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  academy           Academy            @relation(fields: [academyId], references: [id])
+  academiesApproved Academy[]          @relation("AcademyApprovals")
+  graduationReviews GraduationReview[] @relation("ReviewedBy")
+  auditLogs         AuditLog[]
+
+  @@index([academyId])
+  @@map("tbl_users")
+}
+
+// ============================================================
+// AUTH — AUTHENTICATION
+// ============================================================
+
+model Authentication {
+  id         String               @id @default(uuid())
+  type       AuthenticationsTypes @default(by_token)
+  expireIn   DateTime
+  used       Boolean              @default(false)
+  temp_email String?
+  temp_phone String?
+  accountId  String?
+
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  // Relações
+  account       Account?       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  token         Token?
+  twoFactorAuth TwoFactorAuth?
+
+  @@index([accountId])
+  @@index([expireIn])
+  @@index([used])
+  @@index([type])
+  @@map("tbl_authentications")
+}
+
+// ============================================================
+// AUTH — TOKEN
+// ============================================================
+
+model Token {
+  id               String         @id @default(uuid())
+  token            String         @unique @db.Text
+  tokenType        TokenTypes
+  authenticationId String         @unique
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relações
+  authentication Authentication @relation(fields: [authenticationId], references: [id], onDelete: Cascade)
+
+  @@index([tokenType])
+  @@index([createdAt])
+  @@map("tbl_tokens")
+}
+
+// ============================================================
+// AUTH — TWO FACTOR
+// ============================================================
+
+model TwoFactorAuth {
+  id               String         @id @default(uuid())
+  authenticationId String         @unique
+  otpCodeHash      String         @unique
+  attempts         Int            @default(0)
+  maxAttempts      Int            @default(5)
+  locked           Boolean        @default(false)
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relações
+  authentication Authentication @relation(fields: [authenticationId], references: [id], onDelete: Cascade)
+
+  @@index([locked])
+  @@map("tbl_two_factor_auth")
+}
+
+// ============================================================
+// SUBSCRIPTION
+// ============================================================
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  academyId          String             @unique
+
+  status             SubscriptionStatus @default(ACTIVE)
+  amount             Decimal            @db.Decimal(12, 2) @default(35500)
+  currency           String             @default("AOA")
+
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relações
+  academy  Academy               @relation(fields: [academyId], references: [id])
+  payments SubscriptionPayment[]
+
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@map("tbl_subscriptions")
+}
+
+// ============================================================
+// SUBSCRIPTION PAYMENTS
+// ============================================================
+
+model SubscriptionPayment {
+  id             String                    @id @default(uuid())
+  subscriptionId String
+
+  amount         Decimal                   @db.Decimal(12, 2)
+  currency       String                    @default("AOA")
+  status         SubscriptionPaymentStatus @default(PENDING)
+
+  referenceMonth DateTime
+  dueDate        DateTime
+  paidAt         DateTime?
+
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  // Relações
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId, status])
+  @@index([dueDate])
+  @@map("tbl_subscription_payments")
+}
+
+// ============================================================
+// DOWNLOAD KEYS
+// ============================================================
+
+model DownloadKey {
+  id         String            @id @default(uuid())
+  academyId  String
+
+  key        String            @unique
+  status     DownloadKeyStatus @default(ACTIVE)
+
+  expiresAt  DateTime
+  usedAt     DateTime?
+  usedByIp   String?
+
+  createdAt  DateTime          @default(now())
+
+  // Relações
+  academy Academy @relation(fields: [academyId], references: [id])
+
+  @@index([academyId])
+  @@index([status])
+  @@map("tbl_download_keys")
+}
+
+// ============================================================
+// ATHLETES
+// ============================================================
+
+model Athlete {
+  id             String     @id @default(uuid())
+  academyId      String
+
+  affiliateCode  String     @unique @default(cuid())
+
+  fullName       String
+  birthDate      DateTime
+  email          String?
+  phone          String?
+  emergencyPhone String?
+  photoUrl       String?
+
+  currentBelt    BeltColor  @default(WHITE)
+  currentDegree  BeltDegree @default(NONE)
+
+  isActive       Boolean    @default(true)
+  enrolledAt     DateTime   @default(now())
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Relações
+  academy          Academy                    @relation(fields: [academyId], references: [id])
+  payments         Payment[]
+  attendances      Attendance[]
+  graduations      Graduation[]
+
+  @@index([academyId])
+  @@index([affiliateCode])
+  @@map("tbl_athletes")
+}
+
+// ============================================================
+// PAYMENTS (mensalidades dos atletas)
+// ============================================================
+
+model Payment {
+  id             String        @id @default(uuid())
+  athleteId      String
+  academyId      String
+
+  amount         Decimal       @db.Decimal(12, 2)
+  currency       String        @default("AOA")
+  status         PaymentStatus @default(PENDING)
+
+  referenceMonth DateTime
+  dueDate        DateTime
+  paidAt         DateTime?
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relações
+  athlete Athlete @relation(fields: [athleteId], references: [id])
+
+  @@index([academyId, status])
+  @@index([athleteId, referenceMonth])
+  @@map("tbl_payments")
+}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+
+model Attendance {
+  id         String   @id @default(uuid())
+  athleteId  String
+  academyId  String
+
+  classDate  DateTime @db.Date
+  present    Boolean  @default(true)
+
+  createdAt  DateTime @default(now())
+
+  // Relações
+  athlete  Athlete @relation(fields: [athleteId], references: [id])
+
+  @@unique([athleteId, classDate])
+  @@index([academyId, classDate])
+  @@map("tbl_attendances")
+}
+
+// ============================================================
+// GRADUATIONS
+// ============================================================
+
+model Graduation {
+  id              String           @id @default(uuid())
+  athleteId       String
+  academyId       String
+
+  fromBelt        BeltColor
+  fromDegree      BeltDegree
+  toBelt          BeltColor
+  toDegree        BeltDegree
+
+  status          GraduationStatus @default(NOT_ELIGIBLE)
+
+  totalClasses    Int
+  attendedClasses Int
+
+  graduatedAt     DateTime?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relações
+  athlete Athlete          @relation(fields: [athleteId], references: [id])
+  reviews GraduationReview[]
+
+  @@index([academyId])
+  @@index([athleteId])
+  @@map("tbl_graduations")
+}
+
+// ============================================================
+// GRADUATION REVIEWS
+// ============================================================
+
+model GraduationReview {
+  id             String     @id @default(uuid())
+  graduationId   String
+  reviewedById   String
+
+  technicalScore Int?
+  behaviorScore  Int?
+  comment        String     @db.Text
+  recommendation Boolean
+
+  createdAt      DateTime   @default(now())
+
+  // Relações
+  graduation Graduation @relation(fields: [graduationId], references: [id])
+  reviewedBy User       @relation("ReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([graduationId])
+  @@map("tbl_graduation_reviews")
+}
+
+// ============================================================
+// CHAMPIONSHIPS
+// ============================================================
+
+model Championship {
+  id          String    @id @default(uuid())
+  academyId   String
+
+  name        String
+  scheduledAt DateTime
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relações
+  academy       Academy                    @relation(fields: [academyId], references: [id])
+
+  @@index([academyId])
+  @@map("tbl_championships")
+}
+
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  academyId String?
+
+  action    String
+  entity    String
+  entityId  String?
+
+  before    Json?
+  after     Json?
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  // Relações
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([academyId, createdAt])
+  @@index([entity, entityId])
+  @@map("tbl_audit_logs")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum AcademyType {
+  CENTRAL
+  AFFILIATE
+}
+
+enum AcademyStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum UserRole {
+  CENTRAL
+  ADMIN_DEV
+  AFFILIATE_ADMIN
+  MASTER
+  INSTRUCTOR
+  ATHLETE
+}
+
+enum BeltColor {
+  WHITE
+  GREY
+  YELLOW
+  ORANGE
+  GREEN
+  BLUE
+  PURPLE
+  BROWN
+  BLACK
+}
+enum BeltDegree {
+  NONE
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELLED
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum GraduationStatus {
+  ELIGIBLE
+  NOT_ELIGIBLE
+  APPROVED
+  COMPLETED
+}
+
+enum DownloadKeyStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  REVOKED
+}
+
+enum AuthenticationsTypes {
+  by_token
+  by_two_factor
+}
+
+enum TokenTypes {
+  ACCESS
+  REFRESH
+  PASSWORD_RESET
+}

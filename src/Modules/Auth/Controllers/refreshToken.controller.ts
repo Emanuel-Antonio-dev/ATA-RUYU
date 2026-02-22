@@ -1,0 +1,62 @@
+import { Response, Request } from "express";
+import { Controller, Post, Req, Res } from "@nestjs/common";
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiCookieAuth,
+} from "@nestjs/swagger";
+import { RefreshTokenService } from "../Services/refreshToken.service";
+import { PublicRoute } from "src/Common/Decorators/public.decorator";
+
+@ApiTags("Autenticação")
+@Controller("auth")
+class RefreshTokenController {
+  constructor(private readonly service: RefreshTokenService) {}
+
+  @ApiOperation({
+    summary: "Pedir novo token de acesso.",
+    description:
+      "Pede um novo token de acesso para o utilizador autenticado.",
+  })
+  @ApiCookieAuth("refreshToken")
+  @ApiResponse({
+    status: 200,
+    description: "Novo token de acesso gerado com sucesso.",
+    schema: {
+      example: {
+        statusCode: 200,
+        success: true,
+        message: "Novo token de acesso gerado com sucesso.",
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Token inválido ou inexistente.",
+  })
+  @ApiResponse({
+    status: 500,
+    description: "Erro interno do servidor.",
+  })
+  @PublicRoute()
+  @Post("refreshToken")
+  async refreshToken(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const { refreshToken } = request.cookies;
+    const result = await this.service.refreshToken(refreshToken);
+    
+    response.cookie("accessToken", result.datas.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 15 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    });
+
+    return result
+  }
+}
+
+export { RefreshTokenController };
