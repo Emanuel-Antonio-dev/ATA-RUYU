@@ -11,7 +11,7 @@ import { PublicRoute } from 'src/Common/Decorators/public.decorator';
 export class RegisterAcademyController {
   constructor(private readonly registerAcademyService: RegisterAcademyService) {}
 
-  @PublicRoute()
+  @PublicRoute()  
   @Post()
   @UseInterceptors(FileInterceptor('AcademyLogos', uploaderOptions)) // 👈 passa as opções do teu multer
   @ApiConsumes('multipart/form-data')

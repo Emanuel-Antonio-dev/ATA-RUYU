@@ -34,6 +34,9 @@ CREATE TYPE "AuthenticationsTypes" AS ENUM ('by_token', 'by_two_factor');
 -- CreateEnum
 CREATE TYPE "TokenTypes" AS ENUM ('ACCESS', 'REFRESH', 'PASSWORD_RESET');
 
+-- CreateEnum
+CREATE TYPE "DocumentType" AS ENUM ('BI', 'PASSPORT');
+
 -- CreateTable
 CREATE TABLE "tbl_academies" (
     "id" TEXT NOT NULL,
@@ -41,8 +44,6 @@ CREATE TABLE "tbl_academies" (
     "status" "AcademyStatus" NOT NULL DEFAULT 'PENDING',
     "name" TEXT NOT NULL,
     "affiliateNumber" TEXT,
-    "email" TEXT NOT NULL,
-    "phone" TEXT,
     "address" TEXT,
     "province" TEXT,
     "city" TEXT,
@@ -50,6 +51,7 @@ CREATE TABLE "tbl_academies" (
     "approvedById" TEXT,
     "approvedAt" TIMESTAMP(3),
     "rejectedReason" TEXT,
+    "accountId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -74,7 +76,7 @@ CREATE TABLE "tbl_accounts" (
 CREATE TABLE "tbl_users" (
     "id" TEXT NOT NULL,
     "accountId" TEXT NOT NULL,
-    "academyId" TEXT NOT NULL,
+    "academyId" TEXT,
     "role" "UserRole" NOT NULL,
     "fullName" TEXT NOT NULL,
     "photoUrl" TEXT,
@@ -176,6 +178,8 @@ CREATE TABLE "tbl_athletes" (
     "id" TEXT NOT NULL,
     "academyId" TEXT NOT NULL,
     "affiliateCode" TEXT NOT NULL,
+    "documentType" "DocumentType" NOT NULL DEFAULT 'BI',
+    "documentNumber" TEXT NOT NULL,
     "fullName" TEXT NOT NULL,
     "birthDate" TIMESTAMP(3) NOT NULL,
     "email" TEXT,
@@ -286,7 +290,7 @@ CREATE TABLE "tbl_audit_logs" (
 CREATE UNIQUE INDEX "tbl_academies_affiliateNumber_key" ON "tbl_academies"("affiliateNumber");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "tbl_academies_email_key" ON "tbl_academies"("email");
+CREATE UNIQUE INDEX "tbl_academies_accountId_key" ON "tbl_academies"("accountId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tbl_accounts_email_key" ON "tbl_accounts"("email");
@@ -397,13 +401,16 @@ CREATE INDEX "tbl_audit_logs_academyId_createdAt_idx" ON "tbl_audit_logs"("acade
 CREATE INDEX "tbl_audit_logs_entity_entityId_idx" ON "tbl_audit_logs"("entity", "entityId");
 
 -- AddForeignKey
-ALTER TABLE "tbl_academies" ADD CONSTRAINT "tbl_academies_approvedById_fkey" FOREIGN KEY ("approvedById") REFERENCES "tbl_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "tbl_academies" ADD CONSTRAINT "tbl_academies_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "tbl_accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tbl_academies" ADD CONSTRAINT "tbl_academies_approvedById_fkey" FOREIGN KEY ("approvedById") REFERENCES "tbl_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tbl_users" ADD CONSTRAINT "tbl_users_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "tbl_accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_users" ADD CONSTRAINT "tbl_users_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_users" ADD CONSTRAINT "tbl_users_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tbl_authentications" ADD CONSTRAINT "tbl_authentications_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "tbl_accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -415,34 +422,34 @@ ALTER TABLE "tbl_tokens" ADD CONSTRAINT "tbl_tokens_authenticationId_fkey" FOREI
 ALTER TABLE "tbl_two_factor_auth" ADD CONSTRAINT "tbl_two_factor_auth_authenticationId_fkey" FOREIGN KEY ("authenticationId") REFERENCES "tbl_authentications"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_subscriptions" ADD CONSTRAINT "tbl_subscriptions_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_subscriptions" ADD CONSTRAINT "tbl_subscriptions_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_subscription_payments" ADD CONSTRAINT "tbl_subscription_payments_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "tbl_subscriptions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_subscription_payments" ADD CONSTRAINT "tbl_subscription_payments_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "tbl_subscriptions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_download_keys" ADD CONSTRAINT "tbl_download_keys_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_download_keys" ADD CONSTRAINT "tbl_download_keys_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_athletes" ADD CONSTRAINT "tbl_athletes_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_athletes" ADD CONSTRAINT "tbl_athletes_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_payments" ADD CONSTRAINT "tbl_payments_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_payments" ADD CONSTRAINT "tbl_payments_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_attendances" ADD CONSTRAINT "tbl_attendances_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_attendances" ADD CONSTRAINT "tbl_attendances_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_graduations" ADD CONSTRAINT "tbl_graduations_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_graduations" ADD CONSTRAINT "tbl_graduations_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_graduation_reviews" ADD CONSTRAINT "tbl_graduation_reviews_graduationId_fkey" FOREIGN KEY ("graduationId") REFERENCES "tbl_graduations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_graduation_reviews" ADD CONSTRAINT "tbl_graduation_reviews_graduationId_fkey" FOREIGN KEY ("graduationId") REFERENCES "tbl_graduations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_graduation_reviews" ADD CONSTRAINT "tbl_graduation_reviews_reviewedById_fkey" FOREIGN KEY ("reviewedById") REFERENCES "tbl_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_graduation_reviews" ADD CONSTRAINT "tbl_graduation_reviews_reviewedById_fkey" FOREIGN KEY ("reviewedById") REFERENCES "tbl_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_championships" ADD CONSTRAINT "tbl_championships_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tbl_championships" ADD CONSTRAINT "tbl_championships_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_audit_logs" ADD CONSTRAINT "tbl_audit_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "tbl_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "tbl_audit_logs" ADD CONSTRAINT "tbl_audit_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "tbl_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

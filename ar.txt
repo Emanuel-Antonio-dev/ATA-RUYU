@@ -1,6 +1,4 @@
-alianca-tatame/
-├── apps/
-│   ├── api/                                  # NestJS — Backend
+│   ├── ATA-RUYUS/                                  # NestJS — Backend
 │   │   ├── src/
 │   │   │   ├── main.ts
 │   │   │   ├── app.module.ts

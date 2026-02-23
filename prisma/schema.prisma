@@ -255,7 +255,8 @@ model Athlete {
   academyId      String
 
   affiliateCode  String     @unique @default(cuid())
-
+  documentType  DocumentType @default(BI)
+  documentNumber String
   fullName       String
   birthDate      DateTime
   email          String?
@@ -526,4 +527,8 @@ enum TokenTypes {
   ACCESS
   REFRESH
   PASSWORD_RESET
+}
+enum DocumentType {
+  BI
+  PASSPORT
 }
