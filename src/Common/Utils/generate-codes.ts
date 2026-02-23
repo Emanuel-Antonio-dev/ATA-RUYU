@@ -11,4 +11,8 @@ function generateSegment(): string {
 function generateDownloadKey(): string{
     return Array.from({length: SEGMENT_COUNT},generateSegment).join('')
 }
-export{generateDownloadKey}
+function generateAffiliateCode(): string {
+  const random = Math.floor(1000 + Math.random() * 9000); // 1000–9999
+  return `ATA-${String(random).padStart(4, '0')}`;
+}
+export { generateDownloadKey, generateAffiliateCode }

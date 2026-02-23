@@ -8,6 +8,7 @@ import {
 } from "@nestjs/swagger";
 import { RefreshTokenService } from "../Services/refreshToken.service";
 import { PublicRoute } from "src/Common/Decorators/public.decorator";
+import { access, stat } from "fs";
 
 @ApiTags("Autenticação")
 @Controller("auth")
@@ -55,7 +56,12 @@ class RefreshTokenController {
       sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
     });
 
-    return result
+    return {
+      success: result.success,
+      statusCode: result.statusCode,
+      message: result.message,
+      accessToken: result.datas.accessToken,
+    }
   }
 }
 

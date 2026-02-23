@@ -29,12 +29,28 @@ class SignInService
             {
                 throw new UnauthorizedException("Credencias inválidas")
             }
-            const isValidPassword = await bcrypt.compare(datas.password, account.password)
+            if(account.academy && account.academy.status === "PENDING")
+            {
+                throw new UnauthorizedException("A subscrição desta academia ainda não foi aprovada pela central, por favor aguarde.")
+            }
+            const isValidPassword = await bcrypt.compare(datas.password, account.passwordHash)
             if (!isValidPassword)
             {
                 throw new UnauthorizedException("Credencias inválidas.")
             }
-            const payload = {sub: account.user_details.id_user, role: account.user_details.user_type}
+            let payload
+            if(account.academy)
+            {
+                payload = {sub: account.academy.id, role: account.academy.type}
+            }
+            else if(account.user)
+            {
+                payload = {sub: account.user.id, role: account.user.role}
+            }
+            else
+            {
+                throw new UnauthorizedException("Conta sem perfil associado. Contacte o administrador.");
+            }
             const accessToken = await JwtOperations.GenerateToken(payload, "access")
             const refreshToken = await JwtOperations.GenerateToken(payload, "refreshToken")
 
@@ -43,12 +59,12 @@ class SignInService
                     type: "by_token",
                     used:false,
                     expireIn: new Date(Date.now() + this.refreshTokenDate),
-                    accountId: account.id_account
+                    accountId: account.id
                 }, tx)
                 await this.registerTokensService.registerTokens({
                     token: refreshToken,
                     token_type: "REFRESH",
-                    authenticationId: authentication.id_authentication,
+                    authenticationId: authentication.id,
                 }, tx)
             })
             return {

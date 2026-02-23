@@ -29,8 +29,8 @@ import { ValidateOtpCodeService } from "./Services/validate-otp-code.service";
 import { SendOtpCodeService } from "./Services/send-otp.service";
 import { OtpGeneratorService } from "src/Common/Utils/AuthenticationsProcols/2FA/generate-otp-code.protocol";
 import { SendOtpController } from "./Controllers/send-otp-code.controller";
-import { GetCurrentUserController } from "./Controllers/me.controller";
-import { GetCurrenteUserService } from "./Services/get-current-user.service";
+import { GetCurrentAcademyController } from "./Controllers/me.controller";
+import { GetCurrentAcademyService } from "./Services/get-current-academy.service";
 
 @Module({
     imports:[
@@ -45,7 +45,7 @@ import { GetCurrenteUserService } from "./Services/get-current-user.service";
         RefreshTokenController,
         SendOtpController,
         ValidateOtpController,
-        GetCurrentUserController
+        GetCurrentAcademyController
     ],
     providers:[
         PrismaService,
@@ -64,7 +64,7 @@ import { GetCurrenteUserService } from "./Services/get-current-user.service";
         SendEmailService,
         OtpGeneratorService,
         SendOtpCodeService,
-        GetCurrenteUserService,
+        GetCurrentAcademyService,
         {
             provide: IAuthenticationRepositories,
             useClass: PrismaAuthenticationsRepositories
@@ -97,7 +97,7 @@ import { GetCurrenteUserService } from "./Services/get-current-user.service";
         IAuthenticationRepositories,
         SendEmailService,
         OtpGeneratorService,
-        GetCurrenteUserService
+        GetCurrentAcademyService
     ],
 
 })

@@ -25,7 +25,11 @@ class RegisterAccountService
             {
                 throw new ConflictException("Este contacto telefonico já está sendo usado.")
             }
-            const result = await this.repository.registerAccount(datas, tx)
+            const result = await this.repository.registerAccount({
+                email: datas.email,
+                phone_number: datas.phone_number,
+                password: datas.password
+            }, tx)
             if(!result)
             {
                 throw new HttpException("Ocorreu um erro ao criar esta conta", 500)

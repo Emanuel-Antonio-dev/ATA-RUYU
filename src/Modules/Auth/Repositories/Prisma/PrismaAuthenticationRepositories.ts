@@ -12,7 +12,7 @@ class PrismaAuthenticationsRepositories implements IAuthenticationRepositories
 
     async signIn(datas: AutehticationsDto, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>
     {
-        return await this.prisma.account.findUnique({where:{email: datas.email, isActive: true}, include:{authentications: true, user: true}})
+        return await this.prisma.account.findUnique({where:{email: datas.email, isActive: true}, include:{authentications: true, academy: true, user: true}})
     }
 
     async initAuthentication(datas: AuthenticationDatas, tx: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>
@@ -115,48 +115,63 @@ class PrismaAuthenticationsRepositories implements IAuthenticationRepositories
             return await client.twoFactorAuth.update({where:{id: id_two_factor_auth}, data:{locked: true}})    
         }
         
-        async getCurrentUser(id_user: string) {
-            return this.prisma.user.findUnique({
-    where: { id: id_user },
+async getAcademy(id: string) {
+  return this.prisma.academy.findUnique({
+    where: { id },
     select: {
-      id: true,
-      fullName: true,
-      role: true,
-      photoUrl: true,
-      isActive: true,
-      createdAt: true,
+      id:              true,
+      name:            true,
+      type:            true,
+      status:          true,
+      affiliateNumber: true,
+      logoUrl:         true,
+      address:         true,
+      province:        true,
+      city:            true,
+      approvedAt:      true,
+      createdAt:       true,
 
-      // Account (credenciais)
+      // Credenciais de acesso
       account: {
         select: {
-          email: true,
-          phone: true,
-          isActive: true,
+          email:      true,
+          phone:      true,
+          isActive:   true,
           isVerified: true,
         },
       },
 
-      // Academy
-      academy: {
+      // Subscrição activa
+      subscription: {
         select: {
-          id: true,
-          name: true,
-          type: true,
-          status: true,
-          affiliateNumber: true,
-          logoUrl: true,
-          province: true,
-          city: true,
+          status:           true,
+          amount:           true,
+          currency:         true,
+          currentPeriodStart: true,
+          currentPeriodEnd: true,
+        },
+      },
 
-          // Subscription da academia
-          subscription: {
-            select: {
-              status: true,
-              currentPeriodEnd: true,
-              amount: true,
-              currency: true,
-            },
-          },
+      // Utilizadores da academia (admins, instrutores, mestres)
+      users: {
+        where:  { isActive: true },
+        select: {
+          id:       true,
+          fullName: true,
+          role:     true,
+          photoUrl: true,
+        },
+      },
+
+      // Resumo de atletas
+      athletes: {
+        where:  { isActive: true },
+        select: {
+          id:           true,
+          fullName:     true,
+          currentBelt:  true,
+          currentDegree: true,
+          enrolledAt:   true,
         },
       },
     },

@@ -9,7 +9,7 @@ class AccountDto {
     })
     @IsNotEmpty({ message: "Informe o seu e-mail" })
     @IsEmail({}, { message: "Informe um e-mail válido" })
-    email: string;
+    email!: string;
 
     @ApiProperty({
         description: "Senha do usuário",
@@ -20,14 +20,14 @@ class AccountDto {
     @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/, {
         message: "A senha deve conter uma letra maiúscula, um número e um símbolo.",
     })
-    password: string;
+    password!: string;
     @ApiProperty({
         description: "Número de telefone do usuário",
         example: "+244923456789",
     })
     @IsNotEmpty({ message: "Informe o telefone de contato." })
     @IsPhoneNumber("AO", { message: "Informe um número de telefone válido." })
-    phone_number: string;
+    phone_number!: string;
 
     @ApiHideProperty()
     @IsOptional()

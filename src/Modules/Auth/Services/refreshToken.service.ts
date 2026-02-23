@@ -14,62 +14,71 @@ class RefreshTokenService
         private readonly prisma: PrismaService,
     ){}
 
-    async refreshToken(token: string)
-    {
-        try
-        {
-            if(!token)
-            {
-                throw new BadRequestException("Parâmetros de autenticação não fornecido.")
-            }
-            const storedToken = await this.repository.getTokenDatas(token, "REFRESH")
-            if(!storedToken || !storedToken.authentication || storedToken.authentication?.used)
-            {
-                throw new UnauthorizedException("Verificação de sessão inválida ou parâmetros de autenticação já utilizado.")
-            }
-            if(storedToken.authentication.expireIn < new Date())
-            {
-                throw new UnauthorizedException("Sessão expirada.")
-            }
-            const decodedToken = JwtOperations.VerifyToken(token)
-            if(!decodedToken)
-            {
-                throw new UnauthorizedException("Sessão inválida.")
-            }
-            const newAccessToken = await JwtOperations.GenerateToken({sub: decodedToken.sub, role: decodedToken.role}, "access")
-            const newRefreshToken = await JwtOperations.GenerateToken({sub: decodedToken.sub, role: decodedToken.role}, "refreshToken")
-            const accountId = storedToken.authentication.accountId || storedToken.authentication.account?.accountId
-            if(!accountId)
-            {
-                throw new UnauthorizedException("Sessão inválida.")
-            }
-            await this.prisma.$transaction(async (tx) => {
-                await tx.authentication.delete({where: { id: storedToken.authentication.id }})
-              //await tx.tokens.delete({ where: { token: refreshToken } })
-
-              const newAuth = await this.repository.initAuthentication({
-                type: "by_token",
-                used: false,
-                expireIn: new Date(Date.now() + this.REFRESH_TOKEN_TTL),
-                accountId: accountId
-              }, tx)
-
-              await this.repository.registerToken({
-                token: newRefreshToken,
-                token_type: "REFRESH",
-                authenticationId: newAuth.id
-              }, tx)
-            })
-            return {success: true, statusCode: 200, message: "Novo token de acesso gerado com sucesso", datas: {accessToken: newAccessToken, refreshToken: newRefreshToken}}
-        } catch (error: any)
-        {
-            if(error instanceof HttpException)
-            {
-                throw error
-            }
-            console.log(error)
-            throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente mais tarde.")
-        }
+    async refreshToken(token: string) {
+  try {
+    if (!token) {
+      throw new BadRequestException("Parâmetros de autenticação não fornecido.");
     }
+
+    // 1. Verifica se o token existe
+    const storedToken = await this.repository.getTokenDatas(token, "REFRESH");
+
+    if (!storedToken || !storedToken.authentication) {
+      throw new UnauthorizedException("Sessão inválida ou token não encontrado.");
+    }
+
+    if (storedToken.authentication.used) {
+      throw new UnauthorizedException("Token de sessão já utilizado.");
+    }
+
+    // 2. Verifica se o refresh token ainda está dentro do TTL
+    const isExpired = storedToken.authentication.expireIn < new Date();
+    if (isExpired) {
+      // Marca como usado para não ser reutilizado
+      await this.prisma.authentication.update({
+        where: { id: storedToken.authentication.id },
+        data:  { used: true },
+      });
+      throw new UnauthorizedException("Sessão expirada. Faça login novamente.");
+    }
+
+    // 3. Decodifica o refresh token
+    const decodedToken = JwtOperations.VerifyToken(token);
+    if (!decodedToken) {
+      throw new UnauthorizedException("Token inválido.");
+    }
+
+    const accountId = storedToken.authentication.accountId;
+    if (!accountId) {
+      throw new UnauthorizedException("Sessão inválida — conta não encontrada.");
+    }
+
+    // 4. Gera apenas um novo accessToken
+    // O refreshToken permanece o mesmo até expirar
+    const newAccessToken = await JwtOperations.GenerateToken(
+      { sub: decodedToken.sub, role: decodedToken.role },
+      "access",
+    );
+
+    // Calcula o tempo restante do refresh token actual
+    //const remainingTTL = storedToken.authentication.expireIn.getTime() - Date.now();
+    //const remainingDays = Math.ceil(remainingTTL / (1000 * 60 * 60 * 24));
+
+    return {
+      success:    true,
+      statusCode: 200,
+      message:    "Novo token de acesso gerado com sucesso.",
+      datas: {
+        accessToken:       newAccessToken,
+        refreshToken:      token,        // devolve o mesmo refresh token
+      },
+    };
+
+  } catch (error: any) {
+    if (error instanceof HttpException) throw error;
+    console.error(error);
+    throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente mais tarde.");
+  }
+}
 }
 export{RefreshTokenService}

@@ -24,6 +24,6 @@ abstract class IAuthenticationRepositories
     abstract findValidOtp(params: { email?: string; phone_number?: string }):Promise<any>
     abstract incrementOtpAttempts(id_two_factor_auth: string, tx: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>
 
-    abstract getCurrentUser(id_user: string):Promise<any>
+    abstract getAcademy(id: string):Promise<any>
 }
 export{IAuthenticationRepositories}

@@ -21,30 +21,25 @@ model Academy {
   type             AcademyType
   status           AcademyStatus @default(PENDING)
   name             String
-
   affiliateNumber  String?       @unique
-
-  email            String        @unique
-  phone            String?
   address          String?
   province         String?
   city             String?
   logoUrl          String?
-
   approvedById     String?
   approvedAt       DateTime?
   rejectedReason   String?
-
+  accountId        String   @unique
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
-
   // Relações
   users            User[]
+  account           Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   athletes         Athlete[]
   subscription     Subscription?
   downloadKeys     DownloadKey[]
   championships    Championship[]
-  approvedBy       User?         @relation("AcademyApprovals", fields: [approvedById], references: [id])
+  approvedBy       User?         @relation("AcademyApprovals", fields: [approvedById], references: [id], onDelete: Cascade)
 
   @@map("tbl_academies")
 }
@@ -67,6 +62,7 @@ model Account {
 
   // Relações
   user            User?
+  academy        Academy?
   authentications Authentication[]
 
   @@map("tbl_accounts")
@@ -79,7 +75,7 @@ model Account {
 model User {
   id          String    @id @default(uuid())
   accountId   String    @unique
-  academyId   String
+  academyId   String?
   role        UserRole
 
   fullName    String
@@ -91,7 +87,7 @@ model User {
 
   // Relações
   account           Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  academy           Academy            @relation(fields: [academyId], references: [id])
+  academy           Academy?            @relation(fields: [academyId], references: [id], onDelete: Cascade)
   academiesApproved Academy[]          @relation("AcademyApprovals")
   graduationReviews GraduationReview[] @relation("ReviewedBy")
   auditLogs         AuditLog[]
@@ -190,7 +186,7 @@ model Subscription {
   updatedAt          DateTime           @updatedAt
 
   // Relações
-  academy  Academy               @relation(fields: [academyId], references: [id])
+  academy  Academy               @relation(fields: [academyId], references: [id], onDelete: Cascade)
   payments SubscriptionPayment[]
 
   @@index([status])
@@ -218,7 +214,7 @@ model SubscriptionPayment {
   updatedAt      DateTime                  @updatedAt
 
   // Relações
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([subscriptionId, status])
   @@index([dueDate])
@@ -243,7 +239,7 @@ model DownloadKey {
   createdAt  DateTime          @default(now())
 
   // Relações
-  academy Academy @relation(fields: [academyId], references: [id])
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
 
   @@index([academyId])
   @@index([status])
@@ -277,7 +273,7 @@ model Athlete {
   updatedAt      DateTime   @updatedAt
 
   // Relações
-  academy          Academy                    @relation(fields: [academyId], references: [id])
+  academy          Academy                    @relation(fields: [academyId], references: [id], onDelete: Cascade)
   payments         Payment[]
   attendances      Attendance[]
   graduations      Graduation[]
@@ -308,7 +304,7 @@ model Payment {
   updatedAt      DateTime      @updatedAt
 
   // Relações
-  athlete Athlete @relation(fields: [athleteId], references: [id])
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 
   @@index([academyId, status])
   @@index([athleteId, referenceMonth])
@@ -330,7 +326,7 @@ model Attendance {
   createdAt  DateTime @default(now())
 
   // Relações
-  athlete  Athlete @relation(fields: [athleteId], references: [id])
+  athlete  Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 
   @@unique([athleteId, classDate])
   @@index([academyId, classDate])
@@ -362,7 +358,7 @@ model Graduation {
   updatedAt       DateTime         @updatedAt
 
   // Relações
-  athlete Athlete          @relation(fields: [athleteId], references: [id])
+  athlete Athlete          @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   reviews GraduationReview[]
 
   @@index([academyId])
@@ -387,8 +383,8 @@ model GraduationReview {
   createdAt      DateTime   @default(now())
 
   // Relações
-  graduation Graduation @relation(fields: [graduationId], references: [id])
-  reviewedBy User       @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  graduation Graduation @relation(fields: [graduationId], references: [id], onDelete: Cascade)
+  reviewedBy User       @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: Cascade)
 
   @@index([graduationId])
   @@map("tbl_graduation_reviews")
@@ -409,7 +405,7 @@ model Championship {
   updatedAt   DateTime  @updatedAt
 
   // Relações
-  academy       Academy                    @relation(fields: [academyId], references: [id])
+  academy       Academy                    @relation(fields: [academyId], references: [id], onDelete: Cascade)
 
   @@index([academyId])
   @@map("tbl_championships")
@@ -436,7 +432,7 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   // Relações
-  user User? @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([academyId, createdAt])
   @@index([entity, entityId])

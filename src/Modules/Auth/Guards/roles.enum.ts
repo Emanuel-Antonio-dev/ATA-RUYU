@@ -1,6 +1,7 @@
 
 export enum Role {
-  CENTRAL = 'central',
-  ADMIN_DEV = 'admin_dev',
-  AFFILIATE_ADMIN='affiliate_admin'
+  CENTRAL = 'CENTRAL',
+  ADMIN_DEV = 'ADMIN_DEV',
+  AFFILIATE_ADMIN='AFFILIATE_ADMIN',
+  AFFILIATE = 'AFFILIATE'
 }

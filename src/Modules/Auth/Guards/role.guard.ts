@@ -18,8 +18,8 @@ class RolesGuard implements CanActivate
             return true
         }
         const request = context.switchToHttp().getRequest()
-        const entity = request.entity 
-        if(!entity || !requiredRoles.includes(entity.role))
+        const credentials = request.credentials 
+        if(!credentials || !requiredRoles.includes(credentials.role))
         {
             throw new ForbiddenException("Você não tem autorização para acessar este recurso.")
         }

@@ -12,6 +12,7 @@ class PrismaAccountsRepositories implements IAccountsRepositories
 
     async registerAccount(datas: AccountDto, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<AccountDto | any>
     {
+        console.log(datas)
         const client = tx ?? this.prisma
         return await client.account.create({
             data:{

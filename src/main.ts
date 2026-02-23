@@ -1,4 +1,5 @@
 import { NestFactory, Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationError, ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './Common/Filters/http-exception';
@@ -6,6 +7,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import * as express from 'express';
 import * as path from 'path';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {bufferLogs: true});
@@ -22,7 +24,7 @@ async function bootstrap() {
     scheme:"bearer",
     bearerFormat:"JWT",
     name:"Authorization",
-    in:"bearer",
+    in:"header",
   }, "accessToken")
   .build()
   

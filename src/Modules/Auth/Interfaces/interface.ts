@@ -1,5 +1,6 @@
-import { Role } from "../Guards/roles.enum"
+import { Role } from '../Guards/roles.enum';
 import { Request } from "express"
+import { Roles } from '../../../Common/Decorators/roles.decorator';
 
 interface AuthenticationDatas
 {
@@ -39,7 +40,7 @@ interface OtpCodeDatas
 interface RequestWithCredentials extends Request {
   credentials?: {
     sub: string;
-    entity: "central" | "admin_dev" | "affiliate_admin";
+    role: Role
   };
 }
 
