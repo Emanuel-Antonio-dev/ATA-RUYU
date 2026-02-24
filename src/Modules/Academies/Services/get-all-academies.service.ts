@@ -11,7 +11,7 @@ class GetAllAcademiesService {
     private readonly repository: IAcademiesRepositories,
   ) {}
 
-  async execute(filters: {status?:AcademyStatus;type?:AcademyType;page:number;limit:number;})
+  async getAll(filters: {status?:AcademyStatus;type?:AcademyType;page:number;limit:number;})
   {
     try {
       const result = await this.repository.findAllAcademies(filters);

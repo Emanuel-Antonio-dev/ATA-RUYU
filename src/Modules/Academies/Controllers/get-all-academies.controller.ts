@@ -22,13 +22,13 @@ class GetAllAcademiesController {
   @ApiQuery({ name: 'limit',  type: Number,                  required: false, example: 20 })
   @ApiResponse({ status: 200, description: 'Lista paginada de academias' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
-  async findAll(
+  async getAll(
     @Query('status') status?: AcademyStatus,
     @Query('type')   type?:   AcademyType,
     @Query('page')   page?:   string,
     @Query('limit')  limit?:  string,
   ) {
-    return this.service.execute({
+    return this.service.getAll({
       status,
       type,
       page:  page  ? Number(page)  : 1,

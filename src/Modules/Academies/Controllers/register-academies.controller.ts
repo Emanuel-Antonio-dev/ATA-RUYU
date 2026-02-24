@@ -24,7 +24,6 @@ export class RegisterAcademyController {
       type: 'object',
       properties: {
         name:         { type: 'string',  example: 'Academia Dragão BJJ' },
-        type:         { type: 'string',  enum: ['CENTRAL', 'AFFILIATE'], example: 'AFFILIATE' },
         email:        { type: 'string',  format: 'email', example: 'academia@dragao.ao' },
         phone_number: { type: 'string',  example: '+244923456789' },
         address:      { type: 'string',  example: 'Rua da Missão, nº 45' },

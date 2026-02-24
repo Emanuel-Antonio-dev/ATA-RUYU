@@ -1,7 +1,7 @@
 import { IAccountsRepositories } from '../../Accounts/Repositories/IAccounts-repositories';
 import { IAuthenticationRepositories } from '../Repositories/IAuthentication-repositoties';
 import * as bcrypt from 'bcrypt';
-import { HttpException, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { ResetPasswordDto } from '../authentications.dto';
 
 @Injectable()
@@ -19,15 +19,15 @@ class ResetPasswordService
         {
             if(!token)
             {
-                return {success: false, statusCode: 400, message:"Informe todos os campos"}
+                throw new BadRequestException("Informe todos os campos")
             }
             const isValidToken = await this.authenticationRepository.getTokenDatas(token, "PASSWORD_RESET")
-            if (!isValidToken || isValidToken.authentication_details.expireIn < new Date() || isValidToken.authentication_details.used)
+            if (!isValidToken || isValidToken.authentication.expireIn < new Date() || isValidToken.authentication.used)
             {
-                return {statusCode: 400, success: false, message: "Infelizmente o seu tempo para alterar a senha expirou, por favor tente novamente." }
+               throw new BadRequestException("Infelizmente o seu tempo para alterar a senha expirou, por favor tente novamente." )
             }
             const passwordHashed = await bcrypt.hash(newPassword.newPassword, 12)
-            await this.acountRepository.editAccountDatas(isValidToken.authentication_details.account_details.id_account, {password: passwordHashed.trim()})
+            await this.acountRepository.editAccountDatas(isValidToken.authentication.account.id, {password: passwordHashed.trim()})
             await this.authenticationRepository.deleteTokenDatas(token)
             
             if (!isValidToken)

@@ -1,12 +1,12 @@
 abstract class IAddress{
-    email: string
-    name: string
+    email!: string
+    name!: string
 }
 abstract class  IMessage{
-    to: IAddress
-    from: IAddress
-    subject: string
-    body: string
+    to!: IAddress
+    from!: IAddress
+    subject!: string
+    body!: string
 }
 abstract class IEmailProvider
 {

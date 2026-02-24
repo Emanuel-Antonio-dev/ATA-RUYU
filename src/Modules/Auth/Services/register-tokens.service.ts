@@ -19,7 +19,7 @@ class RegisterTokensService
             const alreadyExistsRefreshToken = await this.repository.getTokenDatas(datas.token, datas.token_type,)
             if(alreadyExistsRefreshToken)
             {
-                await this.repository.deleteTokenDatas(alreadyExistsRefreshToken.id_token)
+                await this.repository.deleteTokenDatas(alreadyExistsRefreshToken.id)
             }
             const result = await this.repository.registerToken(datas, tx)
             if(!result)

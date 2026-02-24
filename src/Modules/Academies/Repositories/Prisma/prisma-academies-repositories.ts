@@ -95,8 +95,28 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
   async setAcademyStatus(id: string, status: AcademyStatus): Promise<any> {
     return await this.prisma.academy.update({where:{id: id}, data:{status: status, approvedAt: status === AcademyStatus.ACTIVE ? new Date() : undefined}})
   }
-  async updateAcademy(id: string, datas: Partial<UpdateAcademyRequestDto>, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any> {
-      return await this.prisma.academy.update({where:{id: id}, data:{...datas}})
+  async updateAcademy(id: string, datas: UpdateAcademyRequestDto, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any> {
+      return await this.prisma.academy.update({where:{id: id},
+         data: {
+      // Campos directos da academia
+      ...(datas.name     && { name:     datas.name }),
+      ...(datas.address  && { address:  datas.address }),
+      ...(datas.province && { province: datas.province }),
+      ...(datas.city     && { city:     datas.city }),
+      ...(datas.logoUrl  && { logoUrl:  datas.logoUrl }),
+
+      // Email e phone pertencem ao Account — actualiza via relação
+      ...((datas.email || datas.phone || datas.newPassword) && {
+        account: {
+          update: {
+            ...(datas.email && { email: datas.email }),
+            ...(datas.phone && { phone: datas.phone }),
+            ...(datas.newPassword) && {passwordHash: datas.newPassword }
+          },
+        },
+      }),
+    },
+    })
   }
     async deleteAcademy(id: string, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any> {
         const client = tx ?? this.prisma

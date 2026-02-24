@@ -59,6 +59,14 @@ class UpdateAthleteDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+    @ApiPropertyOptional({ example: 'BI', description: 'Tipo de documento do atleta' })
+    @IsEnum(['BI', 'PASSPORT'], {message: 'O tipo de documento deve ser BI ou PASSPORT'})
+    documentType?: "BI" | "PASSPORT";
+  
+    @ApiPropertyOptional({ example: '12345678', description: 'Número do documento do atleta' })
+    @IsString({message: 'O número do documento deve ser uma string'})
+    documentNumber?: string;
 }
 class UpdateAthleteRequestDto extends PartialType(UpdateAthleteDto) {}
 export { UpdateAthleteDto, UpdateAthleteRequestDto };

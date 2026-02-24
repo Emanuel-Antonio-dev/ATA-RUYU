@@ -40,6 +40,7 @@ async function seedCentralAccount() {
         name:       'Aliança do Tatame — Central',
         type:       AcademyType.CENTRAL,
         status:     AcademyStatus.ACTIVE,
+        address: "Rua da Missão, nº 45",
         province:   'Luanda',
         city:       'Luanda',
         approvedAt: new Date(),

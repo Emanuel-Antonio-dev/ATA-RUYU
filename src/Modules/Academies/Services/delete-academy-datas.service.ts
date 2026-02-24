@@ -18,6 +18,7 @@ class DeleteAcademyService {
     try {
         if(!id) throw new NotFoundException("ID da academia não informado.");
         const academy = await this.repository.findAcademyById({ action: "AllDatas" }, id);
+        if (!academy) throw new NotFoundException("Academia não encontrada.");
         if(credentials?.sub !== id)
         {
             throw new ForbiddenException("Não tens permissão para remover esta academia.");
@@ -26,7 +27,6 @@ class DeleteAcademyService {
         {
             throw new ForbiddenException("Você não pode eliminar a conta da Central.");
         }
-        if (!academy) throw new NotFoundException("Academia não encontrada.");
         const transaction = await this.prisma.$transaction((async(tx)=>{
             await tx.account.deleteMany({where: {id: academy.account.id}});
             const deletedAcademy = await this.repository.deleteAcademy(id, tx);

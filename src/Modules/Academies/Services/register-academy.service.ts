@@ -74,7 +74,7 @@ class RegisterAcademyService
                     {
                         accountId: account.datas.id,
                         name: datasSanitized.name,
-                        type: datas.type,
+                        type: "AFFILIATE",
                         address: datasSanitized.address,
                         province: datasSanitized.province,
                         city: datasSanitized.city,

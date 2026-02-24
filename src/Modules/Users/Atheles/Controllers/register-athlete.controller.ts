@@ -1,17 +1,21 @@
 import { Controller, Post, Body, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateAthleteDto } from '../Dtos/create-athlete.dto';
 import { uploaderOptions} from 'src/Common/Utils/multer-config';
 import { RegisterAthletesService } from '../Services/register-athletes.service';
 import { PublicRoute } from 'src/Common/Decorators/public.decorator';
+import { Role } from '../../../Auth/Guards/roles.enum';
+import { Roles } from 'src/Common/Decorators/roles.decorator';
+import { BeltColor, BeltDegree } from 'generated/prisma/enums';
 
 @ApiTags('Athletes')
+@ApiBearerAuth('accessToken')
 @Controller('athletes')
 export class RegisterAthletesController {
   constructor(private readonly registerAthleteService: RegisterAthletesService) {}
 
-  @PublicRoute()
+  @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
   @Post()
   @UseInterceptors(FileInterceptor('AthletePhotos', uploaderOptions)) // 👈 passa as opções do teu multer
   @ApiConsumes('multipart/form-data')
@@ -26,8 +30,8 @@ export class RegisterAthletesController {
         fullName:         { type: 'string',  example: 'Emanuel Juju' },
         email:        { type: 'string',  format: 'email', example: 'academia@dragao.ao' },
         birthDate:    { type: 'string',  format: 'date', example: '1990-05-20' },
-        currentBelt:  { type: 'string',  example: 'PURPLE' },
-        currentDegree: { type: 'string',  example: 'FIRST' },
+        currentBelt:  { type: 'string',  enum: Object.values(BeltColor), example:  BeltColor.WHITE},
+        currentDegree: { type: 'string',  enum: Object.values(BeltDegree) ,example: BeltDegree.FIRST },
         academyId:     {type: 'string',  example: '123e4567-e89b-12d3-a456-426614174000' },
         phoneNumber: { type: 'string',  example: '+244923456789' },
         emergencyPhone: { type: 'string',  example: '+244923456789' },

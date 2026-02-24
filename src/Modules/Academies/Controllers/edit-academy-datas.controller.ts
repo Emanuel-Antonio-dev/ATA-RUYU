@@ -30,12 +30,16 @@ class EditAcademyController {
   @ApiBody({
     schema: {
       type: 'object',
+      required: [],
       properties: {
-        name:         { type: 'string', example: 'Academia Dragão BJJ' },
-        address:      { type: 'string', example: 'Rua da Missão, nº 45' },
-        province:     { type: 'string', example: 'Luanda' },
-        city:         { type: 'string', example: 'Talatona' },
-        AcademyLogos: { type: 'string', format: 'binary' },
+        name:         { type: 'string',  example: 'Academia Dragão BJJ'},
+        email:        { type: 'string',  format: 'email', example: 'academia@dragao.ao' },
+        phone_number: { type: 'string',  example: '+244923456789' },
+        address:      { type: 'string',  example: 'Rua da Missão, nº 45' },
+        province:     { type: 'string',  example: 'Luanda' },
+        city:         { type: 'string',  example: 'Talatona' },
+        password:     { type: 'string',  example: 'senha123' },
+        AcademyLogos: { type: 'string',  format: 'binary' }, // 👈 nome do field igual ao fieldname
       },
     },
   })
@@ -45,7 +49,7 @@ class EditAcademyController {
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   async update(
     @Param('id') id: string,
-    @Body() body: Partial<UpdateAcademyRequestDto>,
+    @Body() body: UpdateAcademyRequestDto,
     @UploadedFile() file?: Express.Multer.File,
     @Req() req?: RequestWithCredentials
   ) {

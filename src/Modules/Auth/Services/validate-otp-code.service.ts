@@ -26,7 +26,7 @@ class ValidateOtpCodeService
             const otpRecord = await this.repository.findValidOtp({email: datas.email,phone_number: datas.phone_number});
             if (!otpRecord)
             {
-                return { success: false, statusCode: 401, message: "Código inválidsssso ou expirado." };
+                return { success: false, statusCode: 401, message: "Código inválido ou expirado." };
             }
 
             if (otpRecord.locked)
@@ -35,21 +35,21 @@ class ValidateOtpCodeService
                 return { success: false, statusCode: 401, message: "Código bloqueado por excesso de tentativas." };
             }
 
-            if (otpRecord.authentication_details.used) {
+            if (otpRecord.authentication.used) {
                 return { success: false, statusCode: 401, message: "Este código já foi usado." };
             }
 
-            if (otpRecord.authentication_details.expireIn < new Date()) {
+            if (otpRecord.authentication.expireIn < new Date()) {
                 return { success: false, statusCode: 401, message: "Código expirado." };
             }
 
-            const isValidOtp = await bcrypt.compare(datas.otp_code, otpRecord.otp_code);
+            const isValidOtp = await bcrypt.compare(datas.otp_code, otpRecord.otpCodeHash);
             if (!isValidOtp) {
                 const transaction = await  this.prisma.$transaction(async (tx) => {
-                    const icrementOtpAttemps = await this.repository.incrementOtpAttempts(otpRecord.id_two_factor_auth, tx);
+                    const icrementOtpAttemps = await this.repository.incrementOtpAttempts(otpRecord.id, tx);
                     if (icrementOtpAttemps.attempts >= otpRecord.max_attempts)
                     {
-                        await this.repository.lockOtpCode(otpRecord.id_two_factor_auth, tx);
+                        await this.repository.lockOtpCode(otpRecord.twoFactorAuth.id, tx);
                     }
                     return icrementOtpAttemps
                 });
@@ -60,9 +60,9 @@ class ValidateOtpCodeService
                 throw new UnauthorizedException("Código de verificação inválido.");
             }
             await this.prisma.$transaction(async (tx) => {
-                await this.repository.editAuthenticationDatas(otpRecord.authentication_details.id_authentication, true, tx);
+                await this.repository.editAuthenticationDatas(otpRecord.authentication.id, true, tx);
                 await this.repository.invalidateActiveAuthentications({email: datas.email, phone_number: datas.phone_number}, tx)
-                await this.repository.deleteOtpCodeDatas(otpRecord.id_two_factor_auth, tx);
+                await this.repository.deleteOtpCodeDatas(otpRecord.id, tx);
             }, {maxWait: 30000, timeout: 45000});
 
             return { success: true, statusCode: 200, message: "Código validado com sucesso." };

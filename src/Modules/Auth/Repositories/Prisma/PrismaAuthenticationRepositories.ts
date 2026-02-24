@@ -100,7 +100,7 @@ class PrismaAuthenticationsRepositories implements IAuthenticationRepositories
             return this.prisma.twoFactorAuth.findFirst({where: {locked: false,authentication: {used: false,expireIn: { gt: new Date() },
             OR: [params.email ? { temp_email: params.email } : undefined,params.phone_number ? { temp_phone_number: params.phone_number } : undefined,].filter(Boolean) as any,},
         },
-        include: {authentication: true,},});}
+        include: {authentication: true},});}
         
         async incrementOtpAttempts(id_two_factor_auth: string, tx: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>
         {

@@ -44,12 +44,14 @@ class RegisterAthletesService
                 }
             ) : undefined,
         }
-        let affiliateCode: string | undefined = undefined;  
-        const existsAffiliateCode = await this.prisma.athlete.findFirst({where:{affiliateCode: datas.affiliateCode}})
-        if(existsAffiliateCode)
+        let affiliateCode: string;
+        while (true)
         {
-            await this.prisma.athlete.update({where:{id: existsAffiliateCode.id}, data:{affiliateCode: generateAffiliateCode()}})
-            affiliateCode = generateAffiliateCode()
+            affiliateCode = generateAffiliateCode();
+            const conflict = await this.prisma.athlete.findFirst({
+                where: { affiliateCode },
+            });
+            if (!conflict) break;
         }
         const existsAcademy = await this.academyRepository.findAcademyById({action:"OnlyBasicsDatas"},datas.academyId, undefined)
         if(!existsAcademy)
@@ -67,7 +69,7 @@ class RegisterAthletesService
             phoneNumber: datas.phoneNumber,
             emergencyPhone: datas.emergencyPhone,
             enrolledAt: datas.enrolledAt,
-            affiliateCode: affiliateCode,
+            affiliateCode,
             documentNumber: datas.documentNumber,
             documentType: datas.documentType,
             ...sanitizedData
@@ -82,7 +84,7 @@ class RegisterAthletesService
             currentBelt: athlete.currentBelt,
             currentDegree: athlete.currentDegree,
             photoUrl: athlete.photoUrl,
-            affiliateNumber: athlete.affiliateNumber,
+            affiliateCode: athlete.affiliateCode,
             academyId: athlete.academyId,
             documentNumber: athlete.documentNumber,
             documentType: athlete.documentType,

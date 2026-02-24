@@ -35,7 +35,7 @@ class RequestNewPasswordService
                     type:"by_token",
                     used:false,
                     expireIn: new Date(Date.now() + 3600000),
-                    accountId: existsAccount.id_account
+                    accountId: existsAccount.id
                 }, tx)
                 if (!authentication)
                 {
@@ -44,7 +44,7 @@ class RequestNewPasswordService
                 const registerToken = await this.authenticationRepositories.registerToken({
                     token: restPasswordToken,
                     token_type: "PASSWORD_RESET",
-                    authenticationId: authentication.id_authentication,
+                    authenticationId: authentication.id,
                 }, tx)
                 if (!registerToken)
                 {

@@ -8,7 +8,7 @@ class SendEmailService {
   async sendEmail(email: string, subject: string, templateForBody: string) {
     await this.emailProvider.sendEmail({
       from: { email: "ataruyu@suporte.gmail.com", name: "Equipe ATA-RUYU" },
-      to: { name: `Usuário ${email}`, email: email },
+      to: { name: `ATAT-RUYUS ${email}`, email: email },
       subject: subject,
       body: templateForBody,
     });

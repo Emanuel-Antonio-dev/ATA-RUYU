@@ -7,9 +7,10 @@ abstract class IAtheleRepositories
 {
   abstract registerAthlete(datas: CreateAthleteDto, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>;
   abstract getAthleteDatas(id: string): Promise<any>;
+  abstract getAthleteDatasByAffiliateCode(code: string): Promise<any>;
   abstract updateAthlete(id: string, datas: Partial<UpdateAthleteDto>, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>;
   abstract deleteAthlete(id: string, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>;
-  abstract getAllAtheles(filters: {page:number;limit:number;}): Promise<any>
+  abstract getAllAtheles(filters: {page:number;limit:number;academyId?:string;affiliateCode?: string;}): Promise<any>
   abstract deleteAthele(id: string, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>
 }
 export { IAtheleRepositories };

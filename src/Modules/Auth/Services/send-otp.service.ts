@@ -36,7 +36,7 @@ class SendOtpCodeService
                     temp_phone_number: phone_number
                 }, tx)
                 const result = await this.repository.registerOtpCode({
-                    authenticationId: authentication.id_authentication,
+                    authenticationId: authentication.id,
                     otp_code: getOtp.otpCodeHash,
                 }, tx)
                 if(!result)
