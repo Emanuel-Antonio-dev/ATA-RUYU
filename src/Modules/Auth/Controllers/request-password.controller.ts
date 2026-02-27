@@ -9,7 +9,7 @@ import {
 import { RequestPasswordDto } from "../authentications.dto";
 import { PublicRoute } from "src/Common/Decorators/public.decorator";
 
-@ApiTags("Autenticação")
+@ApiTags("Authentication")
 @Controller("auth/password")
 class RequestNewPasswordController {
   constructor(private readonly service: RequestNewPasswordService) {}

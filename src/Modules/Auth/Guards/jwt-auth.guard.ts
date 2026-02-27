@@ -44,10 +44,10 @@ class JwtAuthGuard implements CanActivate
         {
             console.error("Erro ao verificar o token:", error);
             if (error.name === 'TokenExpiredError') {
-                throw new UnauthorizedException("O token de acesso expirou, por favor faça login novamente.");
+                throw new UnauthorizedException("Sessão expirou, por favor faça login novamente.");
             }
             if (error.name === 'JsonWebTokenError') {
-                throw new UnauthorizedException("Token inválido, por favor faça login novamente.");
+                throw new UnauthorizedException("Por favor, faça login novamente.");
             }
             if (error instanceof UnauthorizedException)
             {

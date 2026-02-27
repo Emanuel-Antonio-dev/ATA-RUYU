@@ -10,7 +10,7 @@ import { PublicRoute } from "src/Common/Decorators/public.decorator";
 import { SendOtpCodeService } from "../Services/send-otp.service";
 import { SendOtpDto } from "../authentications.dto";
 
-@ApiTags("Autenticação")
+@ApiTags("Authentication")
 @Controller("auth/otp")
 class SendOtpController {
   constructor(

@@ -20,7 +20,7 @@ import { Roles } from "src/Common/Decorators/roles.decorator";
 import { Role } from "../Guards/roles.enum";
 import { RequestWithCredentials } from "../Interfaces/interface";
 
-@ApiTags("Autenticação")
+@ApiTags("Authentication")
 @ApiBearerAuth("accessToken")
 @Controller("auth")
 class GetCurrentAcademyController {

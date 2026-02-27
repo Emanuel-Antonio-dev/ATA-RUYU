@@ -5,7 +5,7 @@ import { Response } from "express";
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { PublicRoute } from "src/Common/Decorators/public.decorator";
 
-@ApiTags("Autenticação")
+@ApiTags("Authentication")
 @Controller("auth")
 export class SignInController {
   constructor(private readonly service: SignInService) {}

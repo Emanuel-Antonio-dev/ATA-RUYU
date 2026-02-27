@@ -3,8 +3,8 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
 
 class AutehticationsDto {
   @ApiProperty({ description: "E-mail do usuário", example: "email" })
-  @IsNotEmpty({ message: "Informe o e-mail" })
-  @IsEmail({}, { message: "Informe um e-mail válido" })
+  @IsNotEmpty({ message: "Informe o email" })
+  @IsEmail({}, { message: "Informe um email válido" })
   email!: string;
 
   @ApiProperty({ description: "Senha do usuário", example: "senha" })

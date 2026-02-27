@@ -11,7 +11,7 @@ import { ValidateOtpCodeService } from "../Services/validate-otp-code.service";
 import { ValidateOtpDto } from "../authentications.dto";
 import { PublicRoute } from "src/Common/Decorators/public.decorator";
 
-@ApiTags("Autenticação")
+@ApiTags("Authentication")
 @Controller("auth/otp")
 class ValidateOtpController {
   constructor(

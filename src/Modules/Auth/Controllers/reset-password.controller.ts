@@ -9,7 +9,7 @@ import {
 import { AuthorizationQueryDto, ResetPasswordDto } from "../authentications.dto";
 import { PublicRoute } from "src/Common/Decorators/public.decorator";
 
-@ApiTags("Autenticação")
+@ApiTags("Authentication")
 @Controller("auth/password")
 class ResetPasswordController {
   constructor(private readonly service: ResetPasswordService ) {}

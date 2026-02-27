@@ -58,7 +58,7 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
   await app.listen(process.env.PORT ?? 3002, '0.0.0.0');
 
-  console.log(`🚀 API ATA-RUYUS rodando em http://localhost:${process.env.PORT ?? 3002}`);
-  console.log(`📚 Swagger em http://localhost:${process.env.PORT ?? 3002}/api.ata-ruyus/v1/docs`);
+  console.warn(`🚀 ATA-RUYUS API is runing on http://localhost:${process.env.PORT ?? 3002}/api.ata-ruyus/v1`);
+  console.warn(`📚 You can access docs here => http://localhost:${process.env.PORT ?? 3002}/api.ata-ruyus/v1/docs`);
 }
 bootstrap();

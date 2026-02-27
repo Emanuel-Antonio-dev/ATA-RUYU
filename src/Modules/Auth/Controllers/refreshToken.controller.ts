@@ -10,7 +10,7 @@ import { RefreshTokenService } from "../Services/refreshToken.service";
 import { PublicRoute } from "src/Common/Decorators/public.decorator";
 import { access, stat } from "fs";
 
-@ApiTags("Autenticação")
+@ApiTags("Authentication")
 @Controller("auth")
 class RefreshTokenController {
   constructor(private readonly service: RefreshTokenService) {}
