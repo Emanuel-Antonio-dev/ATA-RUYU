@@ -15,6 +15,9 @@ abstract class IAcademiesRepositories
   abstract deleteAcademy(id: string, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>;
 // Repositories/IAcademies-repositories.ts
   abstract findAllAcademies(filters: {status?: AcademyStatus;type?: AcademyType ;page:number;limit:number;}): Promise<any>;
+  abstract getAffiliateReport(academyId: string):Promise<any>
+  abstract getCentralReport():Promise<any>
+
 
 }
 export { IAcademiesRepositories };

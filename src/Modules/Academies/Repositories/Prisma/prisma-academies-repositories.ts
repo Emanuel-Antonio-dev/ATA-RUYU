@@ -212,6 +212,185 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
             data:       academies,
         };
     }
+
+async getAffiliateReport(academyId: string) {
+  const [
+    totalAthletes,
+    activeAthletes,
+    totalPaymentsPaid,
+    totalPaymentsOverdue,
+    totalGraduations,
+    completedGraduations,
+    eligibleGraduations,
+    totalAttendances,
+    totalChampionships,
+  ] = await Promise.all([
+    this.prisma.athlete.count({ where: { academyId } }),
+    this.prisma.athlete.count({ where: { academyId, isActive: true } }),
+    this.prisma.payment.count({ where: { academyId, status: 'PAID' } }),
+    this.prisma.payment.count({ where: { academyId, status: 'OVERDUE' } }),
+    this.prisma.graduation.count({ where: { academyId } }),
+    this.prisma.graduation.count({ where: { academyId, status: 'COMPLETED' } }),
+    this.prisma.graduation.count({ where: { academyId, status: 'ELIGIBLE' } }),
+    this.prisma.attendance.count({
+      where: {
+        academyId,
+        classDate: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+        },
+      },
+    }),
+    this.prisma.championship.count(),
+  ]);
+
+  const [revenueResult, beltDistribution] = await Promise.all([
+    this.prisma.payment.aggregate({
+      where: { academyId, status: 'PAID' },
+      _sum: { amount: true },
+    }),
+    this.prisma.athlete.groupBy({
+      by: ['currentBelt'],
+      where: { academyId, isActive: true },
+      _count: { id: true },
+    }),
+  ]);
+
+  return {
+    athletes: {
+      total: totalAthletes,
+      active: activeAthletes,
+      inactive: totalAthletes - activeAthletes,
+      beltDistribution: beltDistribution.map(b => ({
+        belt: b.currentBelt,
+        count: b._count.id,
+      })),
+    },
+    financial: {
+      totalPaidPayments: totalPaymentsPaid,
+      totalOverduePayments: totalPaymentsOverdue,
+      totalRevenue: revenueResult._sum.amount ?? 0,
+    },
+    graduations: {
+      total: totalGraduations,
+      completed: completedGraduations,
+      eligible: eligibleGraduations,
+    },
+    attendance: {
+      currentMonth: totalAttendances,
+    },
+    championships: {
+      totalAthletesRegistered: totalChampionships,
+    },
+  };
+}
+
+async getCentralReport() {
+  const [
+    // --- Afiliadas ---
+    totalAffiliates,
+    activeAffiliates,
+    suspendedAffiliates,
+    pendingAffiliates,
+
+    // --- Subscrições ---
+    subscriptionsPastDue,
+    subscriptionsSuspended,
+
+    // --- Atletas (toda a rede) ---
+    totalAthletesCentral,
+    activeAthletesCentral,
+
+    // --- Graduações (toda a rede) ---
+    totalGraduationsCentral,
+    completedGraduationsCentral,
+    eligibleGraduationsCentral,
+
+    // --- Presenças (mês corrente, toda a rede) ---
+    totalAttendancesCentral,
+
+    // --- Campeonatos (toda a rede) ---
+    totalChampionshipsCentral,
+
+  ] = await Promise.all([
+    // Afiliadas
+    this.prisma.academy.count({ where: { type: 'AFFILIATE' } }),
+    this.prisma.academy.count({ where: { type: 'AFFILIATE', status: 'ACTIVE' } }),
+    this.prisma.academy.count({ where: { type: 'AFFILIATE', status: 'SUSPENDED' } }),
+    this.prisma.academy.count({ where: { type: 'AFFILIATE', status: 'PENDING' } }),
+
+    // Subscrições
+    this.prisma.subscription.count({ where: { status: 'PAST_DUE' } }),
+    this.prisma.subscription.count({ where: { status: 'SUSPENDED' } }),
+
+    // Atletas
+    this.prisma.athlete.count(),
+    this.prisma.athlete.count({ where: { isActive: true } }),
+
+    // Graduações
+    this.prisma.graduation.count(),
+    this.prisma.graduation.count({ where: { status: 'COMPLETED' } }),
+    this.prisma.graduation.count({ where: { status: 'ELIGIBLE' } }),
+
+    // Presenças (mês corrente)
+    this.prisma.attendance.count({
+      where: {
+        classDate: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+        },
+      },
+    }),
+
+    // Campeonatos
+    this.prisma.championship.count(),
+  ]);
+
+  // --- Receita total da rede (sem quebra por afiliada) ---
+  const revenueCentral = await this.prisma.payment.aggregate({
+    where: { status: 'PAID' },
+    _sum: { amount: true },
+  });
+
+  // --- Pagamentos em atraso na rede ---
+  const [totalPaidCentral, totalOverdueCentral] = await Promise.all([
+    this.prisma.payment.count({ where: { status: 'PAID' } }),
+    this.prisma.payment.count({ where: { status: 'OVERDUE' } }),
+  ]);
+
+  return {
+    affiliates: {
+      total: totalAffiliates,
+      active: activeAffiliates,
+      suspended: suspendedAffiliates,
+      pending: pendingAffiliates,
+    },
+    subscriptions: {
+      pastDue: subscriptionsPastDue,
+      suspended: subscriptionsSuspended,
+      healthy: totalAffiliates - subscriptionsPastDue - subscriptionsSuspended,
+    },
+    athletes: {
+      total: totalAthletesCentral,
+      active: activeAthletesCentral,
+      inactive: totalAthletesCentral - activeAthletesCentral,
+    },
+    financial: {
+      totalPaidPayments: totalPaidCentral,
+      totalOverduePayments: totalOverdueCentral,
+      totalRevenue: revenueCentral._sum.amount ?? 0,
+    },
+    graduations: {
+      total: totalGraduationsCentral,
+      completed: completedGraduationsCentral,
+      eligible: eligibleGraduationsCentral,
+    },
+    attendance: {
+      currentMonth: totalAttendancesCentral,
+    },
+    championships: {
+      totalAthletesRegistered: totalChampionshipsCentral,
+    },
+  };
+}
 }
 
 export { PrismaAcademiesRepositories };

@@ -38,7 +38,6 @@ model Academy {
   athletes         Athlete[]
   subscription     Subscription?
   downloadKeys     DownloadKey[]
-  championships    Championship[]
   approvedBy       User?         @relation("AcademyApprovals", fields: [approvedById], references: [id], onDelete: Cascade)
 
   @@map("tbl_academies")
@@ -89,7 +88,6 @@ model User {
   account           Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   academy           Academy?            @relation(fields: [academyId], references: [id], onDelete: Cascade)
   academiesApproved Academy[]          @relation("AcademyApprovals")
-  graduationReviews GraduationReview[] @relation("ReviewedBy")
   auditLogs         AuditLog[]
 
   @@index([academyId])
@@ -278,6 +276,9 @@ model Athlete {
   payments         Payment[]
   attendances      Attendance[]
   graduations      Graduation[]
+  championships    Championship[]
+  graduationReviews GraduationReview[]
+
 
   @@index([academyId])
   @@index([affiliateCode])
@@ -343,10 +344,10 @@ model Graduation {
   athleteId       String
   academyId       String
 
-  fromBelt        BeltColor
-  fromDegree      BeltDegree
-  toBelt          BeltColor
-  toDegree        BeltDegree
+  fromBelt        BeltColor?
+  fromDegree      BeltDegree?
+  toBelt          BeltColor?
+  toDegree        BeltDegree?
 
   status          GraduationStatus @default(NOT_ELIGIBLE)
 
@@ -360,7 +361,6 @@ model Graduation {
 
   // Relações
   athlete Athlete          @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  reviews GraduationReview[]
 
   @@index([academyId])
   @@index([athleteId])
@@ -373,8 +373,7 @@ model Graduation {
 
 model GraduationReview {
   id             String     @id @default(uuid())
-  graduationId   String
-  reviewedById   String
+  athleteId   String
 
   technicalScore Int?
   behaviorScore  Int?
@@ -384,10 +383,8 @@ model GraduationReview {
   createdAt      DateTime   @default(now())
 
   // Relações
-  graduation Graduation @relation(fields: [graduationId], references: [id], onDelete: Cascade)
-  reviewedBy User       @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: Cascade)
-
-  @@index([graduationId])
+  athlete      Athlete      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  @@index([athleteId])
   @@map("tbl_graduation_reviews")
 }
 
@@ -397,7 +394,7 @@ model GraduationReview {
 
 model Championship {
   id          String    @id @default(uuid())
-  academyId   String
+  athleteId   String
 
   name        String
   scheduledAt DateTime
@@ -406,9 +403,10 @@ model Championship {
   updatedAt   DateTime  @updatedAt
 
   // Relações
-  academy       Academy                    @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  athlete      Athlete      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 
-  @@index([academyId])
+
+  @@index([athleteId])
   @@map("tbl_championships")
 }
 

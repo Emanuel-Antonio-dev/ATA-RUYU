@@ -16,6 +16,9 @@ import { EditAcademyController } from './Controllers/edit-academy-datas.controll
 import { EditAcademyService } from './Services/edit-academy-datas.service';
 import { SetAcademyStatusController } from './Controllers/set-academy-status.controller';
 import { SetAcademyService } from './Services/set-academy-status.service';
+import { GetAcademiesReportsService } from './Services/get-academies-reports.service';
+import {AcademiesReportsController} from './Controllers/get-academies-reports.controller'
+
 @Module({
   imports: [
     AccountModule
@@ -23,6 +26,7 @@ import { SetAcademyService } from './Services/set-academy-status.service';
   controllers: [
     RegisterAcademyController,
     GetAcademyController,
+    AcademiesReportsController,
     GetAllAcademiesController,
     DeleteAcademyController,
     EditAcademyController,
@@ -38,14 +42,15 @@ import { SetAcademyService } from './Services/set-academy-status.service';
     DeleteAcademyService,
     EditAcademyService,
     SetAcademyService,
+    GetAcademiesReportsService,
     {
-        provide: IAcademiesRepositories,
-        useClass: PrismaAcademiesRepositories
+      provide: IAcademiesRepositories,
+      useClass: PrismaAcademiesRepositories
     }
   ],
   exports:[
-        IAcademiesRepositories,
-        GetAcademyService
+    IAcademiesRepositories,
+    GetAcademyService
   ]
 })
 export class AcademiesModule {}
