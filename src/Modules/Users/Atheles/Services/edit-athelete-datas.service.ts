@@ -31,11 +31,10 @@ class EditAtheleteService {
 
     const athlete = await this.repository.getAthleteDatas(id);
     if (!athlete) throw new NotFoundException("Atleta não encontrado/a.");
-    console.log(athlete)
 
     // Verifica se pertence à academia do utilizador logado
     if (credentials?.sub !== athlete.academy.id) {
-      throw new ForbiddenException("Não tens permissão para editar este atleta.");
+      throw new ForbiddenException("Você não tem permissão para editar os dados do(a) atleta de uma outra academia.");
     }
 
     const sanitizeText = (text?: string) =>
@@ -84,6 +83,15 @@ class EditAtheleteService {
         }
         const photoUrl = file ? `/uploads/AthletePhotos/${file.filename}`: datas.photoUrl ?? undefined;
         if (photoUrl) datasToUpdate.photoUrl = photoUrl;
+        if(datas.academyId)
+        {
+          const existsAcademy = await this.prisma.academy.findFirst({where:{id: datas.academyId}})
+          if(!existsAcademy)
+          {
+            throw new NotFoundException("A academia selecionada não foi enonctrada.")
+          }
+          datasToUpdate.academyId = datas.academyId
+        }
         if (Object.keys(datasToUpdate).length === 0) {
           throw new BadRequestException("Nenhum campo para actualizar foi informado.");
         }

@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, HttpException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { RegisterGraduationDto, RegisterGraduationReviewDto} from '../Dtos/create-graduation.dto';
+import { RegisterGraduationDto,RegisterGraduationReviewDto,RegisterGraduationDtoRequest} from '../Dtos/create-graduation.dto';
 import { IGraduationsRepositories } from "../Repositories/IGraduations-repositories";
 import { IAtheleRepositories } from "src/Modules/Users/Atheles/Repositories/IAthlete-repositories";
 import sanitize from "sanitize-html";
@@ -19,41 +19,37 @@ class RegisterGraduationService
         private readonly academyRepository: IAcademiesRepositories,
         private readonly prisma: PrismaService
     ){}
-    async register(datas: RegisterGraduationDto, credentials?:{sub: string, role: Role})
+    async register(datas: RegisterGraduationDtoRequest, credentials?:{sub: string, role: Role})
     {
         try
         {
-            const existsAthele = await this.atheleRepository.getAthleteDatas(datas.athleteId)
+            const existsAthele = await this.atheleRepository.getAthleteDatas(datas.athleteId!)
             if(!existsAthele)
             {
                 throw new NotFoundException("Atleta não encontrado(a)")
             }
-            const existsAcademy = await this.academyRepository.findAcademyById({action:"OnlyBasicsDatas"},datas.athleteId, undefined)
-            if(!existsAcademy)
-            {
-                throw new NotFoundException("Academia não encontrada")
-            }
-            if(credentials?.sub !== existsAcademy.id)
+
+            if(credentials?.sub !== existsAthele.academy.id)
             {
                 throw new ForbiddenException("Você não tem permissão para graduar um atleta de outra academia")
             }
             const atheleHaveReview = await this.prisma.graduationReview.findFirst({where:{athleteId: datas.athleteId}})
             if(!atheleHaveReview)
             {
-                throw new NotFoundException("Este atleta não possui nenhuma recomendação de graduação")
+                throw new NotFoundException("Este atleta precisa de recomendações de graduação")
             }
             // 1. Se fromBelt foi enviado, tem que corresponder à faixa actual
-            if (datas.fromBelt && existsAthele.currentBelt !== datas.fromBelt)
-            {
-                throw new BadRequestException(
-                    `A faixa de origem (${datas.fromBelt}) não corresponde à faixa actual do atleta (${existsAthele.currentBelt})`
-                )
-            }
+            // if (datas.fromBelt && existsAthele.currentBelt !== datas.fromBelt)
+            // {
+            //     throw new BadRequestException(
+            //         `A faixa de origem (${datas.fromBelt}) não corresponde à faixa actual do atleta (${existsAthele.currentBelt})`
+            //     )
+            // }
             // 2. Se fromDegree foi enviado, tem que corresponder ao grau actual
-            if (datas.fromDegree && existsAthele.currentDegree !== datas.fromDegree)
-            {
-                throw new BadRequestException(`O grau de origem (${datas.fromDegree}) não corresponde ao grau actual do atleta (${existsAthele.currentDegree})`)
-            }
+            // if (datas.fromDegree && existsAthele.currentDegree !== datas.fromDegree)
+            // {
+            //     throw new BadRequestException(`O grau de origem (${datas.fromDegree}) não corresponde ao grau actual do atleta (${existsAthele.currentDegree})`)
+            // }
             // 3. Tem que haver pelo menos uma mudança (faixa ou grau)
             if (!datas.toBelt && !datas.toDegree)
             {
@@ -80,49 +76,56 @@ class RegisterGraduationService
                         throw new BadRequestException("Ao manter a mesma faixa, o grau tem que avançar")
                     }
                 }
-                
+                const totalClasses = await this.prisma.attendance.count({where:{athleteId: datas.athleteId}})
+                const attendedClasses = await this.prisma.attendance.count({where:{athleteId: datas.athleteId, present: true}})
+
                 // 6. Presenças assistidas não podem exceder o total
-                if (datas.attendedClasses > datas.totalClasses)
+                // if (datas.attendedClasses! > datas.totalClasses!)
+                // {
+                //     throw new BadRequestException("As presenças assistidas não podem ser superiores ao total de aulas")
+                // }
+                const attendanceRate = attendedClasses / totalClasses
+                if (totalClasses === 0)
                 {
-                    throw new BadRequestException("As presenças assistidas não podem ser superiores ao total de aulas")
+                    throw new BadRequestException('O atleta não possui aulas registadas no período de avaliação, esta graduação ficou condicionada.')
+                }
+                if (attendanceRate < 0.90)
+                {
+                    throw new BadRequestException(`O atleta tem apenas ${Math.round(attendanceRate * 100)}% de presença. Mínimo exigido: 90%`)
                 }
                 // 7. Atleta inactivo não pode ser graduado
                 if (!existsAthele.isActive)
-                    {
-                        throw new BadRequestException("Não é possível graduar um(a) atleta inactivo(a)")
-                    }
+                {
+                    throw new BadRequestException("Não é possível graduar um(a) atleta inactivo(a)")
+                }
                     // 8. Já existe uma graduação pendente
-                const pendingGraduation = await this.repository.getPendingGraduation(datas.athleteId)
+                const pendingGraduation = await this.repository.getPendingGraduation(datas.athleteId!)
                 if (pendingGraduation)
                 {
-                    throw new BadRequestException("Este(a) atleta já tem uma graduação pendente ou em avaliação")
+                    throw new BadRequestException("Este(a) atleta já tem uma graduação pendente, aguarde a decisão do mestre.")
                 }
-
-            if(existsAthele.fromBelt === datas.fromBelt)
-            {
-                throw new BadRequestException("Você não pode graduar um(a) atleta para a mesma faixa")
-            }
             const result = await this.repository.registerAtheleGratuation({
-                athleteId: datas.athleteId,
-                attendedClasses: datas.attendedClasses,
-                fromBelt: datas.fromBelt,
-                fromDegree: datas.fromDegree,
+                athleteId: datas.athleteId!,
+                fromBelt: existsAthele.currentBelt,
+                fromDegree: existsAthele.currentDegree,
                 toBelt: datas.toBelt,
                 toDegree: datas.toDegree,
-                totalClasses: datas.totalClasses,
-                academyId: existsAcademy.id
+                academyId: existsAthele.academy.id,
+                attendedClasses: totalClasses,
+                totalClasses: totalClasses
             })
             if(!result)
             {
-                throw new InternalServerErrorException("Ocorreu um erro ao registrar esta avaliação")
+                throw new InternalServerErrorException("Ocorreu um erro ao registrar esta graduação.")
             }
-            return {success: true, statusCode: 201, message:"Avaliação registrada com sucesso", datas: result}
+            return {success: true, statusCode: 201, message:"Graduação registrada com sucesso", datas: result}
         } catch (error: any)
         {
             if(error instanceof HttpException)
                 {
                     throw error
                 }
+                console.log(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente")
         }
     }

@@ -79,6 +79,7 @@ class RegisterAthletesService
             throw new InternalServerErrorException("Erro ao registrar atleta, tente novamente.")
         }
         const datasFormatted = {
+            id: athlete.id,
             fullName: athlete.fullName,
             birthDate: athlete.birthDate.toISOString().split('T')[0],
             currentBelt: athlete.currentBelt,

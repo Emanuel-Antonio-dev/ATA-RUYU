@@ -23,11 +23,6 @@ class MarkAttendanceService
     {
         try
         {
-            const existsAcademy = await this.academyRepository.findAcademyById({action:"OnlyBasicsDatas"}, datas.academyId)
-            if(!existsAcademy)
-            {
-                throw new NotFoundException("Academia não encontrada.")
-            }
             const existsAthele = await this.atheleRepository.getAthleteDatas(datas.athleteId)
             if(!existsAthele)
             {
@@ -38,12 +33,12 @@ class MarkAttendanceService
             {
                 throw new ConflictException(`O(A) atleta ${existsAthele.fullName} atleta já foi marcado(a) como ${alreadyPresent.present ? "presente":"ausente"} neste dia.`)
             }
-            if(credentials?.sub !== datas.academyId)
+            if(credentials?.sub !== existsAthele.academy.id)
             {
                 throw new UnauthorizedException("Você não tem permissão para marcar a presença de um atleta de outra academia")
             }
             const markAttendance = await this.repository.markAttendance({
-                academyId: datas.academyId,
+                academyId: existsAthele.academy.id,
                 athleteId: datas.athleteId,
                 classDate: new Date(datas.classDate),
                 present: datas.present,

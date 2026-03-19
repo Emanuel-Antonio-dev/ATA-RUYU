@@ -26,7 +26,6 @@ class ResumeAttendanceService {
       if (!isValidDate) throw new BadRequestException("Data inválida.");
 
       const result = await this.repository.resumeOfAttendances(new Date(date));
-      console.log(result)
       // Filtra apenas os atletas da academia do utilizador logado
       const filtered = result.filter(
         (attendance: any) => attendance?.academyId === credentials?.sub,

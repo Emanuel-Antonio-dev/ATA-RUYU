@@ -1,9 +1,10 @@
-import { HttpException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { HttpException, Inject, Injectable, InternalServerErrorException, NotFoundException, ForbiddenException} from "@nestjs/common";
 import { RegisterGraduationDto, RegisterGraduationReviewDto} from '../Dtos/create-graduation.dto';
 import { PrismaGraduationRepositories } from "../Repositories/Prisma/prisma-graduaions-repositories";
 import { IGraduationsRepositories } from "../Repositories/IGraduations-repositories";
 import { IAtheleRepositories } from "src/Modules/Users/Atheles/Repositories/IAthlete-repositories";
 import { IAcademiesRepositories } from "src/Modules/Academies/Repositories/IAcademies-repositories";
+import { Role } from "src/Modules/Auth/Guards/roles.enum";
 import sanitize from "sanitize-html";
 
 @Injectable()
@@ -15,7 +16,7 @@ class RegisterGraduationReviewService
         @Inject(IAtheleRepositories)
         private readonly atheleRepository: IAtheleRepositories,
     ){}
-    async register(datas: RegisterGraduationReviewDto)
+    async register(datas: RegisterGraduationReviewDto, credentials?:{sub: string, role: Role})
     {
         try
         {
@@ -23,6 +24,10 @@ class RegisterGraduationReviewService
             if(!existsAthele)
             {
                 throw new NotFoundException("Atleta não encontrado(a)")
+            }
+            if(credentials?.sub !== existsAthele.academy.id)
+            {
+                throw new ForbiddenException("Você não tem permissão para avaliar a gradução de um(a) atleta de outra academia")
             }
             const result = await this.repository.registerGraduationReview({
                 athleteId: datas.athleteId,
@@ -32,6 +37,8 @@ class RegisterGraduationReviewService
                     allowedTags:[]
                 }),
                 recommendation: datas.recommendation,
+                behaviorScore: datas.behaviorScore,
+                technicalScore: datas.technicalScore
             })
             if(!result)
             {

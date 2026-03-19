@@ -26,7 +26,7 @@ class GetAllGraduationsController {
     private readonly getAllGraduationsService: GetAllGraduationsService,
   ) {}
 
-  @Get(":id")
+  @Get()
   @Roles(Role.CENTRAL, Role.AFFILIATE)
   @ApiOperation({
     summary: 'Listar todas as graduações da academia',
@@ -37,9 +37,9 @@ class GetAllGraduationsController {
   @ApiResponse({ status: 404, description: 'Nenhuma graduação encontrada.' })
   @ApiResponse({ status: 403, description: 'Sem permissão para listar graduações.' })
   @ApiResponse({ status: 500, description: 'Erro interno ao listar graduações.' })
-  async getAll(@Param("id") id: string,@Req() req: RequestWithCredentials) {
+  async getAll(@Req() req: RequestWithCredentials) {
     const credentials = req?.credentials;
-    return this.getAllGraduationsService.getAll(id, credentials);
+    return this.getAllGraduationsService.getAll(credentials?.sub!, credentials);
   }
 }
 

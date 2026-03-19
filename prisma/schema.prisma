@@ -349,7 +349,7 @@ model Graduation {
   toBelt          BeltColor?
   toDegree        BeltDegree?
 
-  status          GraduationStatus @default(NOT_ELIGIBLE)
+  status          GraduationStatus @default(NOT_APPROVED)
 
   totalClasses    Int
   attendedClasses Int
@@ -503,10 +503,8 @@ enum SubscriptionPaymentStatus {
 }
 
 enum GraduationStatus {
-  ELIGIBLE
-  NOT_ELIGIBLE
+  NOT_APPROVED
   APPROVED
-  COMPLETED
 }
 
 enum DownloadKeyStatus {

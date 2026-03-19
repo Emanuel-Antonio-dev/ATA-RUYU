@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsEnum, IsNotEmpty, IsOptional, IsUUID,
   IsInt, Min, Max, IsBoolean, IsString,
@@ -14,11 +14,6 @@ export class RegisterGraduationDto {
   })
   @IsNotEmpty({ message: 'Informe o(a) atleta' })
   athleteId!: string;
-
-  @ApiPropertyOptional({
-    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    description: 'ID da academia',
-  })
   @IsOptional()
   academyId?: string;
 
@@ -46,7 +41,7 @@ export class RegisterGraduationDto {
     description: 'Faixa proposta para o atleta',
   })
   @IsOptional()
-  @IsEnum(BeltColor)
+  @IsEnum(BeltColor, {message:"Informe a faixa correctamente (WHITE, GREY, YELLOW, ORANGE, GREEN, BLUE, PURPLE, BROWN, BLACK)"})
   toBelt?: BeltColor;
 
   @ApiPropertyOptional({
@@ -55,30 +50,12 @@ export class RegisterGraduationDto {
     description: 'Grau proposto para o atleta',
   })
   @IsOptional()
-  @IsEnum(BeltDegree)
+  @IsEnum(BeltDegree, {message:`Informe o grau correctamente (${BeltDegree})`})
   toDegree?: BeltDegree;
-
-  @ApiProperty({
-    example: 48,
-    description: 'Total de aulas registadas no período avaliado',
-    minimum: 0,
-  })
-  @IsInt()
-  @Min(0)
-  @IsNotEmpty({ message: 'Informe o total de aulas no período de avaliação do(a) atleta' })
-  @Type(() => Number)
-  totalClasses!: number;
-
-  @ApiProperty({
-    example: 38,
-    description: 'Número de aulas em que o atleta esteve presente',
-    minimum: 0,
-  })
-  @IsInt()
-  @Min(0)
-  @IsNotEmpty({ message: 'Informe o número de aulas em que o atleta esteve presente' })
-  @Type(() => Number)
-  attendedClasses!: number;
+  @IsOptional()
+  totalClasses?: number;
+  @IsOptional()
+  attendedClasses?: number;
 }
 
 // ── CREATE GRADUATION REVIEW ─────────────────────────────────
@@ -132,3 +109,4 @@ export class RegisterGraduationReviewDto {
   @IsNotEmpty({ message: 'Informe a recomendação do mestre' })
   recommendation!: boolean;
 }
+export class RegisterGraduationDtoRequest extends PartialType(RegisterGraduationDto){}

@@ -10,6 +10,8 @@ import { PrismaGraduationRepositories } from './Repositories/Prisma/prisma-gradu
 import { PrismaService } from 'src/lib/prisma.service';
 import { GetAllGraduationsController } from './Controllers/get-all-graduations.controller';
 import { GetAllGraduationsService } from './Services/get-all-graduations.service';
+import { SetGraduationStatusService } from './Services/set-graduation-status.service';
+import { SetGraduationStatusController } from './Controllers/set-graduation-status.controller';
 
 @Module({
   imports: [
@@ -19,13 +21,15 @@ import { GetAllGraduationsService } from './Services/get-all-graduations.service
   controllers: [
     RegisterGraduationController,
     RegisterGraduationReviewController,
-    GetAllGraduationsController
+    GetAllGraduationsController,
+    SetGraduationStatusController,
   ],
   providers: [
     PrismaService,
     RegisterGraduationReviewService,
     RegisterGraduationService,
     GetAllGraduationsService,
+    SetGraduationStatusService,
     {
         provide: IGraduationsRepositories,
         useClass: PrismaGraduationRepositories

@@ -2,12 +2,12 @@ import { IsEmail, IsNotEmpty, Matches, MaxLength, MinLength, IsString, IsPhoneNu
 import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
 
 class AutehticationsDto {
-  @ApiProperty({ description: "E-mail do usuário", example: "email" })
+  @ApiProperty({ description: "E-mail do usuário", example: "aaaaaa@gmail.com" })
   @IsNotEmpty({ message: "Informe o email" })
   @IsEmail({}, { message: "Informe um email válido" })
   email!: string;
 
-  @ApiProperty({ description: "Senha do usuário", example: "senha" })
+  @ApiProperty({ description: "Senha do usuário", example: "Atacentral@00" })
   @IsNotEmpty({ message: "Informe a sua password" })
   password!: string;
 }

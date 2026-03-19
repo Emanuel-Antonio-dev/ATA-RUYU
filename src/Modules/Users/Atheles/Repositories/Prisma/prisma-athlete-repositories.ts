@@ -51,6 +51,34 @@ class PrismaAthelesRepositories implements IAtheleRepositories
                 referenceMonth: true,
                 dueDate: true
             }
+        },
+        attendances:{
+            select:{
+                id: true,
+                present: true,
+                classDate: true
+            }
+        },
+        graduations:{
+            select:{
+                id: true,
+                attendedClasses: true,
+                totalClasses: true,
+                fromBelt: true,
+                fromDegree: true,
+                toBelt: true,
+                toDegree: true,
+                status: true,
+                graduatedAt: true
+            }
+        },
+        graduationReviews:{
+            select:{
+                id: true,
+                comment: true,
+                recommendation: true,
+                createdAt: true
+            }
         }
     }})
     }
@@ -142,6 +170,7 @@ async getAllAtheles(filters: {
             toBelt:    true,
             fromDegree: true,
             toDegree:  true,
+            status: true
           },
         },
         attendances: {

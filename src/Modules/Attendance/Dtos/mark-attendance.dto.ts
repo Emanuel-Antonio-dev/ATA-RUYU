@@ -13,12 +13,7 @@ export class MarkAttendanceDto {
   })
   @IsNotEmpty({message:"Informe o(a) atleta"})
   athleteId!: string;
-
-  @ApiProperty({
-    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    description: 'ID da academia',
-  })
-  @IsNotEmpty({message:"Informe a academia"})
+  @IsOptional()
   academyId!: string;
 
   @ApiProperty({

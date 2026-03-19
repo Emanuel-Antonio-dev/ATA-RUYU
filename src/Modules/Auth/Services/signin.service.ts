@@ -3,7 +3,7 @@ import { AutehticationsDto } from "../authentications.dto";
 import * as bcrypt from "bcrypt"
 import { IAuthenticationRepositories } from "../Repositories/IAuthentication-repositoties";
 import { JwtOperations } from "src/Common/Utils/AuthenticationsProcols/JwtOperations/operations";
-import { PrismaService } from "src/lib/prisma.service";
+import { PrismaService } from "../../../lib/prisma.service";
 import { InitAuthenticationsService } from "./init-authentications.service";
 import { RegisterTokensService } from "./register-tokens.service";
 

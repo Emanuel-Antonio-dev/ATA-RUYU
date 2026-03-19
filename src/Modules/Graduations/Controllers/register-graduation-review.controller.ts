@@ -45,7 +45,8 @@ class RegisterGraduationReviewController {
     @Body() body: RegisterGraduationReviewDto,
     @Req() req: RequestWithCredentials,
   ) {
-    return this.registerGraduationReviewService.register(body);
+    const creadentials = req.credentials
+    return this.registerGraduationReviewService.register(body, creadentials);
   }
 }
 

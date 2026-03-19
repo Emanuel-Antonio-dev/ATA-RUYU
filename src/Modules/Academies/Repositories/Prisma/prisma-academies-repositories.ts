@@ -230,8 +230,8 @@ async getAffiliateReport(academyId: string) {
     this.prisma.payment.count({ where: { academyId, status: 'PAID' } }),
     this.prisma.payment.count({ where: { academyId, status: 'OVERDUE' } }),
     this.prisma.graduation.count({ where: { academyId } }),
-    this.prisma.graduation.count({ where: { academyId, status: 'COMPLETED' } }),
-    this.prisma.graduation.count({ where: { academyId, status: 'ELIGIBLE' } }),
+    this.prisma.graduation.count({ where: { academyId, status: 'APPROVED' } }),
+    this.prisma.graduation.count({ where: { academyId, status: 'NOT_APPROVED' } }),
     this.prisma.attendance.count({
       where: {
         academyId,
@@ -328,8 +328,8 @@ async getCentralReport() {
 
     // Graduações
     this.prisma.graduation.count(),
-    this.prisma.graduation.count({ where: { status: 'COMPLETED' } }),
-    this.prisma.graduation.count({ where: { status: 'ELIGIBLE' } }),
+    this.prisma.graduation.count({ where: { status: 'APPROVED' } }),
+    this.prisma.graduation.count({ where: { status: 'NOT_APPROVED' } }),
 
     // Presenças (mês corrente)
     this.prisma.attendance.count({
