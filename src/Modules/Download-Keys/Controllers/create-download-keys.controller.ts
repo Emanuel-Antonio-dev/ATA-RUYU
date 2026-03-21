@@ -7,6 +7,7 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  Request
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +17,6 @@ import {
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-
 import { CreateDownloadKeyService } from '../Service/create-download-keys.service';
 import { ValidateDownloadKeyService } from '../Service/validate-download-keys.service';
 import { GetDownloadKeyService } from '../Service/get-download-key.service';
@@ -24,6 +24,7 @@ import { DeleteDownloadKeyService } from '../Service/delete-download-keys.servic
 import { CreateDownloadKeyDto, ValidateKeyDto } from '../Dtos/validate-key.dto';
 import { Role } from 'src/Modules/Auth/Guards/roles.enum';
 import { Roles } from 'src/Common/Decorators/roles.decorator';
+import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
 
 @ApiTags('Download Keys')
 @ApiBearerAuth("accessToken")
@@ -54,7 +55,7 @@ export class DownloadKeysController {
         success: true,
         statusCode: 201,
         message: 'Chave de download gerada com sucesso',
-        datas: 'A1B2-C3D4-E5F6-G7H8',
+        datas: 'ATA-1B2-C3D4-E5F6-G7H8',
       },
     },
   })
@@ -62,13 +63,13 @@ export class DownloadKeysController {
   @ApiResponse({ status: 404, description: 'Academia não encontrada.' })
   @ApiResponse({ status: 409, description: 'Não foi possível gerar uma chave única.' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor.' })
-  create(@Body() academyId: CreateDownloadKeyDto) {
-    return this.createService.execute(academyId);
+  async create(@Body() academyId: CreateDownloadKeyDto) {
+    return await this.createService.execute(academyId);
   }
 
   // ─── VALIDATE ──────────────────────────────────────────────────────────────
 
-  @Roles(Role.AFFILIATE, Role.AFFILIATE_ADMIN)
+  @Roles(Role.AFFILIATE, Role.AFFILIATE_ADMIN, Role.CENTRAL)
   @Post('validate')
   @ApiOperation({
     summary: 'Validar chave de download',
@@ -103,22 +104,26 @@ export class DownloadKeysController {
   @ApiResponse({ status: 403, description: 'Chave expirada, já utilizada ou IP repetido.' })
   @ApiResponse({ status: 404, description: 'Chave não encontrada.' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor.' })
-  validate(@Body() dto: ValidateKeyDto) {
-    return this.validateService.validate(dto);
+  async validate(@Body() dto: ValidateKeyDto, @Request() req: RequestWithCredentials) {
+    return await this.validateService.validate({
+      academyId: dto.academyId,
+      key: dto.key,
+      usedByIp: req.ip!
+    });
   }
 
   // ─── GET ───────────────────────────────────────────────────────────────────
 
   @Roles(Role.CENTRAL)
-  @Get(':id')
+  @Get(':key')
   @ApiOperation({
-    summary: 'Buscar chave de download por ID',
-    description: 'Retorna os detalhes de uma chave de download pelo seu ID.',
+    summary: 'Buscar chave de download',
+    description: 'Retorna os detalhes de uma chave de download.',
   })
   @ApiParam({
-    name: 'id',
-    description: 'ID da chave de download',
-    example: 'clx1abc23def456',
+    name: 'key',
+    description: 'chave de download',
+    example: 'ATA-2MB6-PQEX-EE56',
   })
   @ApiResponse({
     status: 200,
@@ -142,8 +147,8 @@ export class DownloadKeysController {
   })
   @ApiResponse({ status: 400, description: 'Parâmetro de busca não informado.' })
   @ApiResponse({ status: 404, description: 'Chave não encontrada.' })
-  getById(@Param('id') id: string) {
-    return this.getService.execute({ id });
+  getById(@Param('key') key: string) {
+    return this.getService.execute({ key: key });
   }
 
   // ─── DELETE ────────────────────────────────────────────────────────────────
@@ -172,7 +177,7 @@ export class DownloadKeysController {
   })
   @ApiResponse({ status: 404, description: 'Chave não encontrada.' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor.' })
-  delete(@Param('id') id: string) {
-    return this.deleteService.execute({ id });
+  async delete(@Param('id') id: string) {
+    return await this.deleteService.execute({ id });
   }
 }

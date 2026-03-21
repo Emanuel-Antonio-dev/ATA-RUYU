@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash} from "node:crypto";
 
 const CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const SEGMENT_LENGTH = 4;
@@ -14,9 +14,13 @@ function generateDownloadKey(): string {
   return `ATA-${segments}`; // ATA-XXXX-XXXX-XXXX
 }
 
-function generateAffiliateCode(): string {
+function generateAffiliateNumber(): string {
   const random = Math.floor(1000 + Math.random() * 9000);
   return `ATA-${String(random).padStart(4, '0')}`;
 }
 
-export { generateDownloadKey, generateAffiliateCode };
+function hashKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex");
+}
+
+export { generateDownloadKey, generateAffiliateNumber, hashKey};

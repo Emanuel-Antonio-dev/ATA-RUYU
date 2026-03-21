@@ -16,13 +16,13 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
     const client = tx ?? this.prisma
     return await client.academy.create({data: {
         name: datas.name,
-        type: datas.type,
+        type: datas.type!,
         address: datas.address,
         province: datas.province,
         city: datas.city,
         accountId: datas.accountId,
         logoUrl: datas.logoUrl,
-        affiliateNumber: datas.affiliateCode,
+        affiliateNumber: datas.affiliateNumber,
         status: AcademyStatus.PENDING
     }})
   }

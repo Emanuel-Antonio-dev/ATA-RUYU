@@ -4,7 +4,7 @@ import sanitize from "sanitize-html"
 import { Injectable, Inject, HttpException, InternalServerErrorException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from "src/lib/prisma.service";
 import { RegisterAccountService } from "src/Modules/Accounts/Services/register-account.service";
-import { generateAffiliateCode } from "src/Common/Utils/generate-codes";
+import { generateAffiliateNumber } from "src/Common/Utils/generate-codes";
 
 @Injectable()
 class RegisterAcademyService
@@ -59,13 +59,14 @@ class RegisterAcademyService
                 {
                     throw new InternalServerErrorException(account.message || "Erro ao criar conta da academia.")
                 }
-                let affiliateCode: string | undefined = undefined;
+                let affiliateNumber: string | undefined = undefined;
                 if (datas.type === "AFFILIATE") {
                     while (true)
                     {
-                        affiliateCode = generateAffiliateCode();
+                        affiliateNumber = generateAffiliateNumber();
+                        console.log(affiliateNumber)
                         const conflict = await tx.academy.findUnique({
-                            where: { affiliateNumber: affiliateCode },
+                            where: { affiliateNumber: affiliateNumber },
                         });
                         if (!conflict) break;
                     }
@@ -79,7 +80,7 @@ class RegisterAcademyService
                         province: datasSanitized.province,
                         city: datasSanitized.city,
                         logoUrl: datas.logoUrl,
-                        affiliateCode: affiliateCode,
+                        affiliateNumber: affiliateNumber,
                     }, tx)
                     console.log(academy)
                 if(!academy)
@@ -96,7 +97,7 @@ class RegisterAcademyService
                     province: academy.province,
                     city: academy.city,
                     status: academy.status,
-                    affiliateCode: academy.affiliateNumber ?? null,
+                    affiliateNumber: academy.affiliateNumber ?? null,
                     logoUrl: academy.logoUrl,
                     createdAt: academy.createdAt,
                 }

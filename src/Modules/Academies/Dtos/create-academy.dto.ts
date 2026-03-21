@@ -22,9 +22,8 @@ class CreateAcademyDto {
     example: AcademyType.AFFILIATE,
     description: 'Tipo da academia: CENTRAL ou AFFILIATE',
   })
-  @IsEnum(AcademyType)
-  @IsNotEmpty({ message: 'Informe o tipo da academia' })
-  type!: AcademyType;
+  @IsOptional()
+  type?: AcademyType;
 
   @ApiPropertyOptional({
     example: 'Rua da Missão, nº 45',
@@ -65,7 +64,7 @@ class CreateAcademyDto {
 
   @IsOptional()
   @ApiHideProperty()
-  affiliateCode?: string;
+  affiliateNumber?: string;
 }
 
 class CreateAcademyRequestDto extends IntersectionType(CreateAcademyDto, AccountDto) {}

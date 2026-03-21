@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, Matches, IsIP } from 'class-validator';
+import { IsString, IsNotEmpty, Matches, IsIP, IsOptional } from 'class-validator';
 
 export class ValidateKeyDto {
   @ApiProperty({
@@ -14,16 +14,16 @@ export class ValidateKeyDto {
   })
   key!: string;
 
-  @ApiProperty({
-    example: '192.168.25.10',
-    description: 'Ip de proveniência',
-  })
-  @IsString({message:"O Ip deve ser uma string"})
-  @IsNotEmpty({message:"Informe o Ip de proveniência."})
-  @IsIP('4', { message: 'IP inválido. Formato esperado: 192.168.0.1' })
-  usedByIp!: string;
-
-  expiresAt!: Date
+  // @ApiProperty({
+  //   example: '192.168.25.10',
+  //   description: 'Ip de proveniência',
+  // })
+  // @IsNotEmpty({message:"Informe o Ip de proveniência."})
+  // @IsIP('4', { message: 'IP inválido. Formato esperado: 192.168.0.1' })
+  // @IsString({message:"O Ip deve ser uma string"})
+  @IsOptional()
+  usedByIp?: string;
+  expiresAt?: Date
 
   @ApiProperty({
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',

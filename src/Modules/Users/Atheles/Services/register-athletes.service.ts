@@ -5,7 +5,7 @@ import { CreateAthleteDto } from "../Dtos/create-athlete.dto";
 import { HttpException, InternalServerErrorException } from "@nestjs/common";
 import { PrismaService } from "src/lib/prisma.service";
 import { IAcademiesRepositories } from "src/Modules/Academies/Repositories/IAcademies-repositories";
-import { generateAffiliateCode } from "src/Common/Utils/generate-codes";
+import { generateAffiliateNumber } from "src/Common/Utils/generate-codes";
 
 @Injectable()
 class RegisterAthletesService
@@ -47,7 +47,7 @@ class RegisterAthletesService
         let affiliateCode: string;
         while (true)
         {
-            affiliateCode = generateAffiliateCode();
+            affiliateCode = generateAffiliateNumber();
             const conflict = await this.prisma.athlete.findFirst({
                 where: { affiliateCode },
             });

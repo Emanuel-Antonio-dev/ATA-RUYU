@@ -44,6 +44,6 @@ export class RegisterAcademyController {
     ? `/uploads/AcademyLogos/${file.filename}`
     : body.logoUrl ?? undefined; // 👈 undefined em vez de null
 
-  return this.registerAcademyService.register({ ...body, logoUrl });
+  return this.registerAcademyService.register({ type:"AFFILIATE", ...body,logoUrl });
 }
 }

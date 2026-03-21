@@ -4,7 +4,7 @@ import { Injectable, Inject, NotFoundException, HttpException, InternalServerErr
 import { Prisma } from "generated/prisma/client";
 import { CreateAthleteDto } from "../../Dtos/create-athlete.dto";
 import { UpdateAthleteDto, UpdateAthleteRequestDto } from "../../Dtos/update-thlete.dto";
-import { generateAffiliateCode } from "src/Common/Utils/generate-codes";
+import { generateAffiliateNumber } from "src/Common/Utils/generate-codes";
 
 @Injectable()
 class PrismaAthelesRepositories implements IAtheleRepositories
