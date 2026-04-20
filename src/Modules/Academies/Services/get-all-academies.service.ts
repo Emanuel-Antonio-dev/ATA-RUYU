@@ -19,7 +19,13 @@ class GetAllAcademiesService {
       return {
         success:true,
         statusCode: 200,
-        datas: result,
+        datas: result.data,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages,
+        }
       };
     } catch (error: any) {
       if (error instanceof HttpException) throw error;

@@ -187,7 +187,6 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
                                     paidAt: true,
                                     referenceMonth: true,
                                     status: true,
-                                    dueDate: true
                                 },
                             },
                             email:    true,
@@ -227,8 +226,8 @@ async getAffiliateReport(academyId: string) {
   ] = await Promise.all([
     this.prisma.athlete.count({ where: { academyId } }),
     this.prisma.athlete.count({ where: { academyId, isActive: true } }),
-    this.prisma.payment.count({ where: { academyId, status: 'PAID' } }),
-    this.prisma.payment.count({ where: { academyId, status: 'OVERDUE' } }),
+    this.prisma.athelePayment.count({ where: { athlete:{academy:{id: academyId}}, status: 'PAID' } }),
+    this.prisma.athelePayment.count({ where: { athlete:{academy:{id: academyId}}, status: 'OVERDUE' } }),
     this.prisma.graduation.count({ where: { academyId } }),
     this.prisma.graduation.count({ where: { academyId, status: 'APPROVED' } }),
     this.prisma.graduation.count({ where: { academyId, status: 'NOT_APPROVED' } }),
@@ -244,8 +243,8 @@ async getAffiliateReport(academyId: string) {
   ]);
 
   const [revenueResult, beltDistribution] = await Promise.all([
-    this.prisma.payment.aggregate({
-      where: { academyId, status: 'PAID' },
+    this.prisma.athelePayment.aggregate({
+      where: { athlete:{academy:{id: academyId}}, status: 'PAID' },
       _sum: { amount: true },
     }),
     this.prisma.athlete.groupBy({
@@ -345,15 +344,15 @@ async getCentralReport() {
   ]);
 
   // --- Receita total da rede (sem quebra por afiliada) ---
-  const revenueCentral = await this.prisma.payment.aggregate({
+  const revenueCentral = await this.prisma.athelePayment.aggregate({
     where: { status: 'PAID' },
     _sum: { amount: true },
   });
 
   // --- Pagamentos em atraso na rede ---
   const [totalPaidCentral, totalOverdueCentral] = await Promise.all([
-    this.prisma.payment.count({ where: { status: 'PAID' } }),
-    this.prisma.payment.count({ where: { status: 'OVERDUE' } }),
+    this.prisma.athelePayment.count({ where: { status: 'PAID' } }),
+    this.prisma.athelePayment.count({ where: { status: 'OVERDUE' } }),
   ]);
 
   return {

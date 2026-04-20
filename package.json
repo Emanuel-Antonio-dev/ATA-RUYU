@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed-admin-account": "ts-node -r tsconfig-paths/register src/Common/Seeds/register-admin-dev.seed.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/Common/Seeds/register-admin-dev.seed.ts",
     "seed-central-account": "ts-node -r tsconfig-paths/register src/Common/Seeds/register-central.seed.ts"
   },
   "dependencies": {
@@ -27,6 +27,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/schedule": "^6.1.1",
     "@nestjs/swagger": "^11.2.6",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
@@ -37,6 +38,7 @@
     "cloudinary": "^2.9.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
+    "cron": "^4.4.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",

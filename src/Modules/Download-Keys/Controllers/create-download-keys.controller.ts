@@ -5,8 +5,6 @@ import {
   Delete,
   Body,
   Param,
-  HttpCode,
-  HttpStatus,
   Request
 } from '@nestjs/common';
 import {
@@ -104,10 +102,9 @@ export class DownloadKeysController {
   @ApiResponse({ status: 403, description: 'Chave expirada, já utilizada ou IP repetido.' })
   @ApiResponse({ status: 404, description: 'Chave não encontrada.' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor.' })
-  async validate(@Body() dto: ValidateKeyDto, @Request() req: RequestWithCredentials) {
+  async validate(@Body() {key}: ValidateKeyDto, @Request() req: RequestWithCredentials) {
     return await this.validateService.validate({
-      academyId: dto.academyId,
-      key: dto.key,
+      key: key,
       usedByIp: req.ip!
     });
   }
@@ -154,15 +151,15 @@ export class DownloadKeysController {
   // ─── DELETE ────────────────────────────────────────────────────────────────
 
   @Roles(Role.CENTRAL)
-  @Delete(':id')
+  @Delete(':key')
   @ApiOperation({
     summary: 'Remover chave de download',
-    description: 'Remove permanentemente uma chave de download pelo seu ID.',
+    description: 'Remove permanentemente uma chave de download pela sua chave.',
   })
   @ApiParam({
-    name: 'id',
-    description: 'ID da chave de download a ser removida',
-    example: 'clx1abc23def456',
+    name: 'key',
+    description: 'Chave de download a ser removida',
+    example: 'ATA-2MB6-PQEX-EE56',
   })
   @ApiResponse({
     status: 200,
@@ -177,7 +174,7 @@ export class DownloadKeysController {
   })
   @ApiResponse({ status: 404, description: 'Chave não encontrada.' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor.' })
-  async delete(@Param('id') id: string) {
-    return await this.deleteService.execute({ id });
+  async delete(@Param('key') key: string) {
+    return await this.deleteService.execute({ key: key });
   }
 }

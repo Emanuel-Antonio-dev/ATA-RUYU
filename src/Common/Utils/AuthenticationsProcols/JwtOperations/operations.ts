@@ -19,7 +19,7 @@ class JwtOperations
         {
             return jwt.sign(payload, secret, {expiresIn:"7d"})
         }
-        return jwt.sign(payload, secret, {expiresIn:"24h"})
+        return jwt.sign(payload, secret, {expiresIn:"15min"})
     }
     static VerifyToken(token: string)
     {

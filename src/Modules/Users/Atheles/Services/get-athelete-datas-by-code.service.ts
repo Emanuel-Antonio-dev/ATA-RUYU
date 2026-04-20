@@ -11,13 +11,13 @@ class GetAtheleteByAffiliateCodeService {
     private readonly repository: IAtheleRepositories,
   ) {}
 
-  async get(id: string, credentials?: { sub: string; role: Role},)
+  async get(code: string, credentials?: { sub: string; role: Role},)
   {
     try {
-      if(!id) throw new NotFoundException("ID da do atleta não informado.");
-        const athelete = await this.repository.getAthleteDatas(id);
-        if (!athelete) throw new NotFoundException("Atleta não encontrado/a.");
-        return { success: true, statusCode: 200, datas: athelete };
+      if(!code) throw new NotFoundException("Informe o(a) atleta.");
+      const athelete = await this.repository.getAthleteDatasByAffiliateCode(code);
+      if (!athelete) throw new NotFoundException("Atleta não encontrado(a).");
+      return { success: true, statusCode: 200, datas: athelete };
     } catch (error: any) {
       if(error instanceof HttpException)
         {

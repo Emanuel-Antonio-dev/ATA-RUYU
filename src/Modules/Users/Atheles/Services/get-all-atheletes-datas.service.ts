@@ -24,7 +24,7 @@ class GetAllAthletesService {
         page:  filters.page,
         limit: filters.limit,
       });
-      if(!result)
+      if(result.data.length === 0)
       {
         throw new NotFoundException("De momento ainda não existem atletas")
       }

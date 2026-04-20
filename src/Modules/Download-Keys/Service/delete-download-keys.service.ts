@@ -2,6 +2,7 @@
 import { Injectable, BadRequestException, ConflictException, HttpException, InternalServerErrorException, Inject, NotFoundException } from "@nestjs/common";
 import { IDownloadKeysRepositories } from "../Repositories/IDownload-keys-repositories";
 import { Role } from "src/Modules/Auth/Guards/roles.enum";
+import { hashKey } from "src/Common/Utils/generate-codes";
 
 @Injectable()
 export class DeleteDownloadKeyService {
@@ -16,13 +17,17 @@ export class DeleteDownloadKeyService {
         {
             throw new BadRequestException("Forneça pelo menos um parâmetro de busca: id, usedByIp ou key.");
         }
+        if(params.key)
+        {
+            params.key = hashKey(params.key)
+        }
         const existsKey = await this.repository.getDownloadKey(params)
         if(!existsKey)
         {
             throw new NotFoundException("Esta chave de download não existe.")
         }
         const result = await this.repository.deleteDownloadKey(params);
-        if (!result){throw new NotFoundException("Chave de download não encontrada.");}
+        if (!result){throw new NotFoundException("Ocorreu um erro ao deletar esta chave de download.");}
         return {success: true, statusCode: 200, message:"Chave de download deletada com sucesso."};    
     } catch (error: any)
     {

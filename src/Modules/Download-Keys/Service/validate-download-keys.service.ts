@@ -19,11 +19,10 @@ export class ValidateDownloadKeyService {
     private readonly repository: IDownloadKeysRepositories
   ) {}
 
-  async validate(datas: ValidateKeyDto){
+  async validate({key, usedByIp}:ValidateKeyDto ){
     try {
-      const { key, academyId } = datas;
       const hashedKey = hashKey(key)
-      const usedByIp = datas.usedByIp;
+      const ip = usedByIp;
 
       const downloadKey = await this.repository.getDownloadKey({ key: hashedKey });
       if (!downloadKey) {
@@ -37,11 +36,11 @@ export class ValidateDownloadKeyService {
       }
 
       // 🔐 valida academia
-      if (downloadKey.academyId !== academyId) {
-        throw new ForbiddenException(
-          "Esta chave de download não pertence a esta academia."
-        );
-      }
+      // if (downloadKey.academyId !== academyId) {
+      //   throw new ForbiddenException(
+      //     "Esta chave de download não pertence a esta academia."
+      //   );
+      // }
 
       // ⏰ expiração
       if (downloadKey.expiresAt && new Date() > downloadKey.expiresAt) {
@@ -55,7 +54,7 @@ export class ValidateDownloadKeyService {
       const updated = await this.repository.updateDownloadKey(
         downloadKey.id,
         {
-          usedByIp,
+          usedByIp: ip,
           usedAt: new Date(),
           status: "USED",
         }

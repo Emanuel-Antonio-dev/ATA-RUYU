@@ -38,19 +38,6 @@ class RegisterGraduationService
             {
                 throw new NotFoundException("Este atleta precisa de recomendações de graduação")
             }
-            // 1. Se fromBelt foi enviado, tem que corresponder à faixa actual
-            // if (datas.fromBelt && existsAthele.currentBelt !== datas.fromBelt)
-            // {
-            //     throw new BadRequestException(
-            //         `A faixa de origem (${datas.fromBelt}) não corresponde à faixa actual do atleta (${existsAthele.currentBelt})`
-            //     )
-            // }
-            // 2. Se fromDegree foi enviado, tem que corresponder ao grau actual
-            // if (datas.fromDegree && existsAthele.currentDegree !== datas.fromDegree)
-            // {
-            //     throw new BadRequestException(`O grau de origem (${datas.fromDegree}) não corresponde ao grau actual do atleta (${existsAthele.currentDegree})`)
-            // }
-            // 3. Tem que haver pelo menos uma mudança (faixa ou grau)
             if (!datas.toBelt && !datas.toDegree)
             {
                 throw new BadRequestException("É necessário indicar pelo menos a faixa ou o grau de destino")
@@ -76,14 +63,9 @@ class RegisterGraduationService
                         throw new BadRequestException("Ao manter a mesma faixa, o grau tem que avançar")
                     }
                 }
-                const totalClasses = await this.prisma.attendance.count({where:{athleteId: datas.athleteId}})
+                const totalClasses = await this.prisma.attendance.count({where:{academyId: existsAthele.academy.id}})
                 const attendedClasses = await this.prisma.attendance.count({where:{athleteId: datas.athleteId, present: true}})
 
-                // 6. Presenças assistidas não podem exceder o total
-                // if (datas.attendedClasses! > datas.totalClasses!)
-                // {
-                //     throw new BadRequestException("As presenças assistidas não podem ser superiores ao total de aulas")
-                // }
                 const attendanceRate = attendedClasses / totalClasses
                 if (totalClasses === 0)
                 {
@@ -111,7 +93,7 @@ class RegisterGraduationService
                 toBelt: datas.toBelt,
                 toDegree: datas.toDegree,
                 academyId: existsAthele.academy.id,
-                attendedClasses: totalClasses,
+                attendedClasses: attendedClasses,
                 totalClasses: totalClasses
             })
             if(!result)

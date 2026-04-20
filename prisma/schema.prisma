@@ -273,7 +273,7 @@ model Athlete {
 
   // Relações
   academy          Academy                    @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  payments         Payment[]
+  payments         AthelePayment[]
   attendances      Attendance[]
   graduations      Graduation[]
   championships    Championship[]
@@ -289,17 +289,14 @@ model Athlete {
 // PAYMENTS (mensalidades dos atletas)
 // ============================================================
 
-model Payment {
+model AthelePayment {
   id             String        @id @default(uuid())
   athleteId      String
-  academyId      String
 
   amount         Decimal       @db.Decimal(12, 2)
-  currency       String        @default("AOA")
   status         PaymentStatus @default(PENDING)
 
   referenceMonth DateTime
-  dueDate        DateTime
   paidAt         DateTime?
 
   createdAt      DateTime      @default(now())
@@ -308,9 +305,9 @@ model Payment {
   // Relações
   athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 
-  @@index([academyId, status])
+  @@index([status])
   @@index([athleteId, referenceMonth])
-  @@map("tbl_payments")
+  @@map("tbl_athele_payments")
 }
 
 // ============================================================

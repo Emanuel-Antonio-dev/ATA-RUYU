@@ -24,13 +24,8 @@ export class ValidateKeyDto {
   @IsOptional()
   usedByIp?: string;
   expiresAt?: Date
-
-  @ApiProperty({
-    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    description: 'ID da academia',
-  })
-  @IsNotEmpty({message:"Informe a academia"})
-  academyId!: string;
+  
+  academyId?: string;
 
 }
 export class CreateDownloadKeyDto {

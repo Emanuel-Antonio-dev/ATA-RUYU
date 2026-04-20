@@ -5,16 +5,14 @@ import { IAtheleRepositories } from "./Repositories/IAthlete-repositories";
 import { PrismaAthelesRepositories } from "./Repositories/Prisma/prisma-athlete-repositories";
 import { PrismaService } from "src/lib/prisma.service";
 import { AcademiesModule } from "src/Modules/Academies/academies.module";
-import { GetAtheleteByAffiliateCodeController } from "./Controllers/get-athelete-datas-by-affiliate-code.controller";
-import { GetAtheleteController } from "./Controllers/get-athelete-datas.controller";
-import { GetAtheleteByAffiliateCodeService } from "./Services/get-athelete-datas.service";
-import { GetAtheleteService } from "./Services/get-athelete-datas-by-affiliate-code.service";
+import { GetAthleteController } from "./Controllers/get-athelete-datas.controller";
 import { DeleteAtheleteController } from "./Controllers/delete-ahelete-datas.controller";
 import { DeleteAtheleteService } from "./Services/delete-athelete-datas.service";
 import { EditAthleteController } from "./Controllers/edit-athelete-datas.controller";
 import { EditAtheleteService } from "./Services/edit-athelete-datas.service";
-import { GetAllAthletesController } from "./Controllers/get-all-atheletes-datas.controller";
 import { GetAllAthletesService } from "./Services/get-all-atheletes-datas.service";
+import { GetAtheleteByAffiliateCodeService } from "./Services/get-athelete-datas-by-code.service";
+import { GetAtheleteByIdService } from "./Services/get-atheletes-datas-by-id.service";
 
 @Module({
     imports:[
@@ -22,19 +20,17 @@ import { GetAllAthletesService } from "./Services/get-all-atheletes-datas.servic
     ],
     controllers:[
         RegisterAthletesController,
-        GetAtheleteByAffiliateCodeController,
-        GetAtheleteController,
+        GetAthleteController,
         DeleteAtheleteController,
         EditAthleteController,
-        GetAllAthletesController
     ],
     providers:[
         RegisterAthletesService,
         GetAtheleteByAffiliateCodeService,
-        GetAtheleteService,
+        GetAllAthletesService,
+        GetAtheleteByIdService,
         DeleteAtheleteService,
         EditAtheleteService,
-        GetAllAthletesService,
         PrismaService,
         {
             provide: IAtheleRepositories,
@@ -45,4 +41,4 @@ import { GetAllAthletesService } from "./Services/get-all-atheletes-datas.servic
         IAtheleRepositories
     ]
 })
-export class AthletesModule{}
+export class AthletesModule {}

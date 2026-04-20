@@ -18,13 +18,12 @@ class PrismaDownloadKeysRepositories implements IDownloadKeysRepositories
                 expiresAt: datas.expiresAt!,
                 usedAt: new Date(),
                 usedByIp: datas.usedByIp,
-                academyId: datas.academyId
+                academyId: datas.academyId!
             }
         })
     }
     async getDownloadKey(params: Partial<{ id: string; usedByIp: string; key: string; academyId: string }>): Promise<any> {
     const whereClause: any = {};
-
     if (params.id) whereClause.id = params.id;
     if (params.usedByIp) whereClause.usedByIp = params.usedByIp;
     if (params.key) whereClause.key = params.key;

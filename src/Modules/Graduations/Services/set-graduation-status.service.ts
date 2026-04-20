@@ -11,6 +11,13 @@ import { IGraduationsRepositories } from '../Repositories/IGraduations-repositor
 import { Role } from 'src/Modules/Auth/Guards/roles.enum';
 import { IAtheleRepositories } from 'src/Modules/Users/Atheles/Repositories/IAthlete-repositories';
 
+type GraduationStatus = 'APPROVED' | 'NOT_APPROVED';
+
+const STATUS_LABELS: Record<GraduationStatus, { action: string; past: string }> = {
+  APPROVED:     { action: 'aprovar',  past: 'aprovada'  },
+  NOT_APPROVED: { action: 'reprovar', past: 'reprovada' },
+};
+
 @Injectable()
 class SetGraduationStatusService {
   constructor(
@@ -22,47 +29,45 @@ class SetGraduationStatusService {
 
   async set(athleteId: string, status:"APPROVED" | "NOT_APPROVED",credentials?: {sub: string, role: Role}) {
     try {
-        
-        if (!athleteId)
-        {
-            throw new BadRequestException('Informe o(a) atleta.');
-        }
-      const existsAthlete = await this.athleteRepository.getAthleteDatas(athleteId);
+          const { action, past } = STATUS_LABELS[status];
+          if (!athleteId)
+            {
+              throw new BadRequestException('Informe o(a) atleta.');
+            }
+            const existsAthlete = await this.athleteRepository.getAthleteDatas(athleteId);
+            if (!existsAthlete)
+            {
+              throw new NotFoundException('Atleta não econtrado(a)');
+            }
 
-      if (!existsAthlete)
-        {
-          throw new NotFoundException('Atleta não econtrado(a)');
+            if(existsAthlete.academy.id !== credentials?.sub)
+            {
+              throw new ForbiddenException(`Você não tem permissão para ${action} a graduação de um(a) atleta de outra academia.`)
+            }
+            const pendingGraduation = existsAthlete.graduations.find(g => g.status === 'PENDING');
+            if (!pendingGraduation)
+            {
+              throw new NotFoundException('Este(a) atleta não possui nenhuma graduação pendente.');
+            }
+            if(existsAthlete.graduations[0].status === "APPROVED" || existsAthlete.graduations[0].status === "NOT_APPROVED")
+            {
+              throw new BadRequestException(`A graduação deste(a) atleta já foi ${past}`)
+            }
+            const result = await this.repository.setGraduationStatus(existsAthlete.graduations[0].id,athleteId, status);
+            if (!result)
+            {
+              throw new InternalServerErrorException(`Ocorreu um erro ao ${action} a graduação, tente novamente`);
+            } 
+            return { success: true, statusCode: 200, message:`Graduação ${past} com sucesso` };
+          } catch (error: any) {
+            if (error instanceof HttpException) {
+              console.log(error)
+              throw error;
+            }
+            console.log(error)
+            throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
+          }
         }
-        const statusType = status === "APPROVED" ? "aprovar" : "negar"
-        const messageTypeStatus = status === "APPROVED" ? "aprovada" : "negado"
-
-        if(existsAthlete.academy.id !== credentials?.sub)
-        {
-            throw new ForbiddenException(`Você não pode ${statusType} a graduação de um(a) atleta de outra academia.`)
-        }
-        if(existsAthlete.graduations.length === 0)
-        {
-            throw new NotFoundException("Este atleta ainda não possui uma graduação pendente")
-        }
-        if(existsAthlete.graduations[0].status === "APPROVED" || existsAthlete.graduations[0].status === "NOT_APPROVED")
-        {
-          throw new BadRequestException(`A graduação deste(a) atleta já foi ${messageTypeStatus}`)
-        }
-        const result = await this.repository.setGraduationStatus(existsAthlete.graduations[0].id,athleteId, status);
-        if (!result)
-        {
-          throw new InternalServerErrorException(`Ocorreu um erro ao ${statusType} a graduação, tente novamente`);
-        }
-      return { success: true, statusCode: 201, message:`Graduação ${messageTypeStatus} com sucesso` };
-    } catch (error: any) {
-      if (error instanceof HttpException) {
-        console.log(error)
-        throw error;
       }
-      console.log(error)
-      throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
-    }
-  }
-}
 
 export { SetGraduationStatusService };

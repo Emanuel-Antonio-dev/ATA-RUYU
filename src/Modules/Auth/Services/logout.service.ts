@@ -1,5 +1,6 @@
 import { BadRequestException, HttpException, Inject,Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { IAuthenticationRepositories } from "../Repositories/IAuthentication-repositoties";
+import { JwtOperations } from "src/Common/Utils/AuthenticationsProcols/JwtOperations/operations";
 
 @Injectable()
 class LogoutService {
@@ -21,6 +22,7 @@ class LogoutService {
       {
         throw new InternalServerErrorException("Sessão inválida ou já encerrada.");
       }
+      
 
       return {
         statusCode: 200,
