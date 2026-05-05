@@ -17,20 +17,11 @@ export class RegisterGraduationDto {
   @IsOptional()
   academyId?: string;
 
-  @ApiPropertyOptional({
-    enum: BeltColor,
-    example: BeltColor.BLUE,
-    description: 'Faixa actual do atleta (antes da graduação)',
-  })
   @IsOptional()
   @IsEnum(BeltColor)
   fromBelt?: BeltColor;
 
-  @ApiPropertyOptional({
-    enum: BeltDegree,
-    example: BeltDegree.NONE,
-    description: 'Grau actual do atleta',
-  })
+
   @IsOptional()
   @IsEnum(BeltDegree)
   fromDegree?: BeltDegree;

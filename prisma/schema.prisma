@@ -346,7 +346,7 @@ model Graduation {
   toBelt          BeltColor?
   toDegree        BeltDegree?
 
-  status          GraduationStatus @default(NOT_APPROVED)
+  status          GraduationStatus @default(PENDING)
 
   totalClasses    Int
   attendedClasses Int
@@ -502,6 +502,7 @@ enum SubscriptionPaymentStatus {
 enum GraduationStatus {
   NOT_APPROVED
   APPROVED
+  PENDING
 }
 
 enum DownloadKeyStatus {

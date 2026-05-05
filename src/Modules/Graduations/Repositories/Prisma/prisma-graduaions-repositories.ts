@@ -30,7 +30,7 @@ class PrismaGraduationRepositories implements IGraduationsRepositories
             toDegree: datas.toDegree,
             totalClasses: datas.totalClasses!,
             athleteId: datas.athleteId,
-            graduatedAt: new Date()
+            graduatedAt: new Date(),
         }})    
     }
     async getAtheleGraduationDatas(atheleId: string): Promise<any>

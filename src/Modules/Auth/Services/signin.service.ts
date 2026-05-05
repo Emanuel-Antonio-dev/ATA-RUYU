@@ -31,7 +31,7 @@ class SignInService
             }
             if(account.academy && account.academy.status === "PENDING")
             {
-                throw new UnauthorizedException("A subscrição desta academia ainda não foi aprovada pela central, por favor aguarde.")
+                throw new UnauthorizedException("O registro da sua academia ainda não foi aprovada pela central, por favor aguarde.")
             }
             const isValidPassword = await bcrypt.compare(datas.password, account.passwordHash)
             if (!isValidPassword)

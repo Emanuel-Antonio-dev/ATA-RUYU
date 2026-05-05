@@ -35,13 +35,6 @@ export class ValidateDownloadKeyService {
         throw new ForbiddenException("Esta chave de download já foi utilizada."); 
       }
 
-      // 🔐 valida academia
-      // if (downloadKey.academyId !== academyId) {
-      //   throw new ForbiddenException(
-      //     "Esta chave de download não pertence a esta academia."
-      //   );
-      // }
-
       // ⏰ expiração
       if (downloadKey.expiresAt && new Date() > downloadKey.expiresAt) {
         throw new ForbiddenException("Esta chave de download expirou.");
@@ -68,6 +61,7 @@ export class ValidateDownloadKeyService {
         success: true,
         statusCode: 200,
         message: "Download liberado!",
+        isDownloadAllowed: true
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
