@@ -59,9 +59,6 @@ export class CreateAthleteDto {
   @IsString({message: 'A URL da foto deve ser uma string'})
   photoUrl?: string;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'ID da academia à qual o atleta pertence' })
-  @IsString()
-  @IsNotEmpty({message: 'A academia é obrigatória'})
   academyId!: string
 
   @ApiProperty({ example: '1998-03-12', description: 'Data de inscrição do atleta (ISO 8601)' })

@@ -45,6 +45,7 @@ class SetGraduationStatusService {
               throw new ForbiddenException(`Você não tem permissão para ${action} a graduação de um(a) atleta de outra academia.`)
             }
             const pendingGraduation = existsAthlete.graduations.find(g => g.status === 'PENDING');
+            console.log(existsAthlete.graduations)
             if (!pendingGraduation)
             {
               throw new NotFoundException('Este(a) atleta não possui nenhuma graduação pendente.');
@@ -57,7 +58,8 @@ class SetGraduationStatusService {
             if (!result)
             {
               throw new InternalServerErrorException(`Ocorreu um erro ao ${action} a graduação, tente novamente`);
-            } 
+            }
+            //Deve notificar no painel sobre a decisão da graduação do atleta em questão
             return { success: true, statusCode: 200, message:`Graduação ${past} com sucesso` };
           } catch (error: any) {
             if (error instanceof HttpException) {

@@ -34,13 +34,12 @@ export class CancelSubscriptionService {
       return {
         success: true,
         statusCode: 200,
-        message: 'Subscrição cancelada com sucesso',
-        data: result,
+        message: 'Subscrição cancelada com sucesso'
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
       console.log(error);
-      throw new InternalServerErrorException('Erro ao cancelar subscrição');
+      throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
     }
   }
 }

@@ -18,9 +18,12 @@ import { SetAcademyStatusController } from './Controllers/set-academy-status.con
 import { SetAcademyService } from './Services/set-academy-status.service';
 import { GetAcademiesReportsService } from './Services/get-academies-reports.service';
 import {AcademiesReportsController} from './Controllers/get-academies-reports.controller'
+import { CacheService } from '../Cache/cache.service';
+import { CacheModule } from '../Cache/cache.module';
 
 @Module({
   imports: [
+    CacheModule,
     AccountModule
   ],
   controllers: [

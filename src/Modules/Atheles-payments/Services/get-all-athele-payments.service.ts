@@ -24,23 +24,20 @@ class GetAllAthletePaymentsService {
     credentials?: { sub: string; role: Role },
   ) {
     try {
-      if(!filters.academyId)
-      {
-        throw new NotFoundException("Informe a academia.")
-      }
-            if(filters.academyId !== credentials?.sub)
-            {
-              throw new UnauthorizedException("Você não tem permissão para acessar a lista de pagamentos de outras academias.")
-            }
+
             const existsAcademy = await this.academyRepository.findAcademyById({action:"OnlyBasicsDatas"}, filters.academyId)
             if(!existsAcademy)
             {
               throw new NotFoundException("Academia não encontrada.")
             }
+            if(existsAcademy.id !== credentials?.sub)
+            {
+              throw new UnauthorizedException("Você não tem permissão para acessar a lista de pagamentos de outras academias.")
+            }
             const result = await this.paymentsRepository.getAllAthelePayments({
                 page:  filters.page,
                 limit: filters.limit,
-                academyId: filters.academyId
+                academyId: credentials?.sub!
             });
             if(!result)
             {

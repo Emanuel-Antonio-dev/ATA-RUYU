@@ -1,6 +1,6 @@
-import { Inject, Injectable, InternalServerErrorException, HttpException, NotFoundException, UnauthorizedException} from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, HttpException, NotFoundException, BadRequestException} from "@nestjs/common";
 import { IAthelePaymentsRepositories } from "../Repositories/IAthlete-repositories";
-import {UpdatePaymentDto} from "../Dtos/update-payment.dto"
+import { UpdatePaymentRequestBody} from "../Dtos/update-payment.dto"
 import { PaymentStatus, PrismaClient } from "../../../../generated/prisma/client";
 import { Role } from "src/Modules/Auth/Guards/roles.enum";
 import { PrismaService } from "src/lib/prisma.service";
@@ -13,24 +13,32 @@ class UpdateAthelePaymentService
     private readonly prisma: PrismaService
 ){}
 
-    async updateStatus(datas: UpdatePaymentDto, credentials?: {sub: string, role: Role})
+    async updateStatus(id: string,datas: UpdatePaymentRequestBody, credentials?: {sub: string, role: Role})
     {
         try
         {
-            const existsPayment = await this.prisma.athelePayment.findFirst({where:{id: datas.id}, include:{athlete:{include:{academy:true}}}})
+            if(!id)
+            {
+                throw new BadRequestException("Informe do pagamento.")
+            }
+            const existsPayment = await this.prisma.athelePayment.findFirst({where:{id: id}, include:{athlete:{include:{academy:true}}}})
             if(!existsPayment)
             {
                 throw new NotFoundException("Pagamento não encontrado.")
             }
             if(credentials?.sub !== existsPayment.athlete.academyId)
             {
-                throw new UnauthorizedException("Você não tem permissão para atualizar o status do pagamento de um(a) atleta de outra academia.")
+                throw new BadRequestException("Você não tem permissão para atualizar o status do pagamento de um(a) atleta de outra academia.")
             }
-            if(datas.status !== PaymentStatus.PENDING)
+            if(existsPayment.status !== PaymentStatus.PENDING)
             {
-                throw new UnauthorizedException("Apenas pagamentos pendentes pode ser validados.")
+                throw new BadRequestException("Apenas pagamentos pendentes pode ser validados.")
             }
-            const result = await this.repository.updateAthelePaymentStatus(datas)
+            if (datas.status === PaymentStatus.PENDING)
+            {
+                throw new BadRequestException("Não é possível redefinir para pendente.")
+            }
+            const result = await this.repository.updateAthelePaymentStatus(id, datas)
             if(!result)
             {
                 throw new InternalServerErrorException("Ocorreu um erro ao atualizar o status deste pagamento, tente novamente.")

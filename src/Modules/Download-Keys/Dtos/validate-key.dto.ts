@@ -4,13 +4,13 @@ import { IsString, IsNotEmpty, Matches, IsIP, IsOptional } from 'class-validator
 export class ValidateKeyDto {
   @ApiProperty({
     example: 'A1B2-C3D4-E5F6-G7H8',
-    description: 'Chave de activação no formato XXXX-XXXX-XXXX-XXXX',
-    pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$',
+    description: 'Chave de activação no formato XXXX-XXXX-XXXX-XXXX-XXXX',
+    pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$',
   })
   @IsString()
   @IsNotEmpty()
-  @Matches(/^ATA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/, {
-    message: 'Chave inválida. Formato esperado: ATA-XXXX-XXXX-XXXX',
+  @Matches(/^ATA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/, {
+    message: 'Chave inválida. Formato esperado: ATA-XXXX-XXXX-XXXX-XXXX-XXXX',
   })
   key!: string;
 

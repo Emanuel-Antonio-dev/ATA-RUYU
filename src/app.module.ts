@@ -8,6 +8,7 @@ import { GratuationsModule } from './Modules/Graduations/gradtuations.module';
 import DownloadKeysModule from './Modules/Download-Keys/download-keys.module';
 import { AthletePaymentsModule } from './Modules/Atheles-payments/atheles-payments.module';
 import { SubscriptionsModule } from './Modules/Subscriptions/subscriptions.module';
+import { CacheModule } from './Modules/Cache/cache.module';
 
 @Module({
   imports: [
@@ -18,8 +19,8 @@ import { SubscriptionsModule } from './Modules/Subscriptions/subscriptions.modul
     AthletePaymentsModule,
     AttendanceModule,
     GratuationsModule,
-    SubscriptionsModule
-    
+    SubscriptionsModule,
+    CacheModule
   ],
   controllers: [
     AppController

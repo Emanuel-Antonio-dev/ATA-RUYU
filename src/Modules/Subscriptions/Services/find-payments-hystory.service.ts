@@ -35,7 +35,7 @@ export class GetSubscriptionPaymentHistoryService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       console.log(error);
-      throw new InternalServerErrorException('Erro ao buscar histórico');
+      throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
     }
   }
 }

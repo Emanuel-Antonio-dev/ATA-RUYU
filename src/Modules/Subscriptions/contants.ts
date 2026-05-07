@@ -1,2 +1,0 @@
-export const SUBSCRIPTION_AMOUNT_AOA = 35500;
-export const SUBSCRIPTION_CURRENCY = 'AOA';

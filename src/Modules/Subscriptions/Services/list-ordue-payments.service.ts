@@ -24,7 +24,7 @@ export class ListOverduePaymentsService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       console.log(error);
-      throw new InternalServerErrorException('Erro ao listar pagamentos vencidos');
+      throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
     }
   }
 }

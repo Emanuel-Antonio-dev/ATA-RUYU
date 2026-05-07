@@ -4,13 +4,14 @@ import { AppModule } from './app.module';
 import { BadRequestException, ValidationError, ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './Common/Filters/http-exception';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import logger  from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import * as express from 'express';
 import * as path from 'path';
 
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {bufferLogs: true});
+  const app = await NestFactory.create(AppModule,{logger: ['log', 'error', 'warn', 'debug', 'verbose']});
 
   app.use((cookieParser as any)());
   app.setGlobalPrefix('api.ata-ruyus/v1');

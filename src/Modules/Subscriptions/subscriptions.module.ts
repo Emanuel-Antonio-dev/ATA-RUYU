@@ -12,9 +12,10 @@ import { RenewSubscriptionService } from './Services/renew-subscription.service'
 import { CancelSubscriptionService } from './Services/cancel-payment-subscription.service';
 import { GetSubscriptionPaymentHistoryService } from './Services/find-payments-hystory.service';
 import { PrismaService } from 'src/lib/prisma.service';
+import { AcademiesModule } from '../Academies/academies.module';
 
 @Module({
-  imports: [],
+  imports: [AcademiesModule],
   controllers: [SubscriptionController],
   providers: [
     {
@@ -26,8 +27,8 @@ import { PrismaService } from 'src/lib/prisma.service';
       provide: ISubscriptionRepository
     },
     PrismaService,
-    RegisterSubscriptionPaymentService,
     RegisterSubscriptionService,
+    RegisterSubscriptionPaymentService,
     ListOverduePaymentsService,
     ConfirmSubscriptionPaymentService,
     RenewSubscriptionService,

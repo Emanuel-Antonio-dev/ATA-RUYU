@@ -1,6 +1,6 @@
 // Services/find-athelete.service.ts
 
-import { Injectable, Inject, NotFoundException, HttpException,InternalServerErrorException, ForbiddenException} from "@nestjs/common";
+import { Injectable, Inject, NotFoundException, HttpException,InternalServerErrorException, ForbiddenException, UnauthorizedException} from "@nestjs/common";
 import { IAtheleRepositories } from "../Repositories/IAthlete-repositories";
 import { Role } from "src/Modules/Auth/Guards/roles.enum";
 

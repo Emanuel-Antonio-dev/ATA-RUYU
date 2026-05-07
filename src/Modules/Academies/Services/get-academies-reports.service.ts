@@ -9,17 +9,19 @@ import {
 import { IAcademiesRepositories } from '../Repositories/IAcademies-repositories';
 import { Role } from 'src/Modules/Auth/Guards/roles.enum';
 import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
+import { CacheService } from 'src/Modules/Cache/cache.service';
 
 @Injectable()
 class GetAcademiesReportsService {
   constructor(
     @Inject(IAcademiesRepositories)
     private readonly repository: IAcademiesRepositories,
+    private readonly cacheService: CacheService,
   ) {}
 
   async get(credentials?: { sub: string; role: Role}) {
     try {
-        console.log("teste")
+      
       if (credentials?.role === 'AFFILIATE') {
         const result = await this.repository.getAffiliateReport(credentials?.sub);
 

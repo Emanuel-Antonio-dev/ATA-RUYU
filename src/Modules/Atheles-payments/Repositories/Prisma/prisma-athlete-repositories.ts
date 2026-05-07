@@ -114,12 +114,12 @@ class PrismaAthelePaymentsRepositories implements IAthelePaymentsRepositories
                 data:       payments,
             };
         }
-        async updateAthelePaymentStatus(datas: UpdatePaymentDto): Promise<any> {
+        async updateAthelePaymentStatus(id: string, datas: UpdatePaymentDto): Promise<any> {
             return await this.prisma.athelePayment.update({
-                where: { id: datas.id },
+                where: { id: id },
                 data: {
                     status: datas.status,
-                    paidAt: datas.paidAt,
+                    paidAt: new Date(datas.paidAt!),
                 },
             });
         }

@@ -8,7 +8,7 @@ export class RegisterSubscriptionDto {
     description: 'ID da academia para a qual a subscrição será criada',
   })
   @IsUUID()
-  academyId: string;
+  academyId!: string;
 
   @ApiPropertyOptional({
     example: 'AOA',

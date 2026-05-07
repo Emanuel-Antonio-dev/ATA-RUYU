@@ -12,12 +12,14 @@ import { PrismaService } from "src/lib/prisma.service";
 import sanitize from "sanitize-html";
 import { Role } from "src/Modules/Auth/Guards/roles.enum";
 import * as bcrypt from 'bcrypt';
+import { CacheService } from "src/Modules/Cache/cache.service";
 @Injectable()
 class EditAcademyService {
   constructor(
     @Inject(IAcademiesRepositories)
     private readonly repository: IAcademiesRepositories,
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async edit(id: string, datas: UpdateAcademyRequestDto, file?: Express.Multer.File,credentials?: { sub: string; role: Role },
@@ -98,6 +100,9 @@ class EditAcademyService {
       {
         throw new InternalServerErrorException("Ocorreu um erro ao atualizar os dados desta academia")
       }
+      this.cacheService.invalidatePattern("academies:list:");
+      this.cacheService.invalidatePattern("academy:");
+      this.cacheService.invalidatePattern("dashboard:academy:");    
       return {
         success:    true,
         statusCode: 200,

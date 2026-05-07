@@ -7,7 +7,6 @@ import {
   Inject
 } from "@nestjs/common";
 
-import { Request } from "express";
 import { ValidateKeyDto } from "../Dtos/validate-key.dto";
 import { IDownloadKeysRepositories } from "../Repositories/IDownload-keys-repositories";
 import { hashKey } from "src/Common/Utils/generate-codes";

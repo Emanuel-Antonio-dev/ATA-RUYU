@@ -3,7 +3,7 @@ import { ApiOperation, ApiResponse, ApiBearerAuth, ApiTags, ApiQuery } from "@ne
 import { Roles } from "src/Common/Decorators/roles.decorator";
 import { Role } from "src/Modules/Auth/Guards/roles.enum";
 import { GetAllAthletePaymentsService } from "../Services/get-all-athele-payments.service";
-import { RequestWithCredentials } from "src/Modules/Auth/Interfaces/interface"; // ✅
+import { RequestWithCredentials } from "src/Modules/Auth/Interfaces/interface";
 
 @ApiTags('Athletes/payments')
 @ApiBearerAuth("accessToken")
@@ -12,7 +12,7 @@ class GetAllAthletePaymentsController {
   constructor(private readonly service: GetAllAthletePaymentsService) {}
 
   @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
-  @Get(":academyId")
+  @Get()
   @ApiOperation({ summary: 'Listar pagamentos de atletas' })
   @ApiQuery({ name: 'page',  type: Number, required: false, example: 1 })
   @ApiQuery({ name: 'limit', type: Number, required: false, example: 20 })
@@ -21,7 +21,6 @@ class GetAllAthletePaymentsController {
   @ApiResponse({ status: 404, description: 'Academia não encontrada' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   async findAll(
-    @Param('academyId') academyId: string,
     @Req() req: RequestWithCredentials, // ✅
     @Query('page')  page?:  string,
     @Query('limit') limit?: string,
@@ -31,7 +30,7 @@ class GetAllAthletePaymentsController {
       {
         page:      page  ? Number(page)  : 1,
         limit:     limit ? Number(limit) : 20,
-        academyId,
+        academyId: credentias?.sub!
       },
       credentias
     );

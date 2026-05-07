@@ -16,17 +16,12 @@ class UpdatePaymentDto {
     example: '2026-02-08',
     description: 'Data em que o pagamento foi efectuado (ISO 8601)',
   })
-  @IsNotEmpty({message:"Informe a data de pagamento"})
-  @IsDateString()
-  paidAt?: string;
+  @IsOptional()
+  paidAt?: Date;
 
   @ApiHideProperty()
   @IsOptional()
   receiptUrl?: string;
-
-  @IsNotEmpty({message:"Informe o pagamento"})
-  @IsString()
-  id!: string;
 }
 class UpdatePaymentRequestBody extends PartialType(UpdatePaymentDto) {}
 export { UpdatePaymentDto, UpdatePaymentRequestBody};

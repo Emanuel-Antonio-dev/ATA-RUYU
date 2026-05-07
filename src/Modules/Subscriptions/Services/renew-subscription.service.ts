@@ -48,7 +48,7 @@ export class RenewSubscriptionService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       console.log(error);
-      throw new InternalServerErrorException('Erro ao renovar subscrição');
+      throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
     }
   }
 }

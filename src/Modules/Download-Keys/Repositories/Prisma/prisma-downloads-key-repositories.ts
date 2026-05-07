@@ -31,6 +31,7 @@ class PrismaDownloadKeysRepositories implements IDownloadKeysRepositories
 
     return await this.prisma.downloadKey.findFirst({
         where: whereClause,
+        omit: {academyId: true},
         include: {
             academy: {
                 select: {

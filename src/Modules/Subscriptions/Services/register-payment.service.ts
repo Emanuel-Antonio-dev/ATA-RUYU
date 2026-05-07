@@ -1,10 +1,9 @@
 import { ISubscriptionRepository } from "../Repositories/ISubscriptions-repositories";
 import { ConflictException, Inject, Injectable, HttpException, InternalServerErrorException, UnauthorizedException, NotFoundException, BadRequestException} from "@nestjs/common";
-import {SUBSCRIPTION_AMOUNT_AOA, SUBSCRIPTION_CURRENCY} from "../contants"
 import { ISubscriptionPaymentRepository } from "../Repositories/ISubscriptions-payments.repositories";
 import { RegisterSubscriptionPaymentDto } from "../Dtos/register-subscription-payment.dto";
 import { SubscriptionStatus } from "generated/prisma/enums";
-
+import "dotenv/config"
 @Injectable()
 export class RegisterSubscriptionPaymentService {
   constructor(
@@ -15,65 +14,97 @@ export class RegisterSubscriptionPaymentService {
     private readonly paymentRepo: ISubscriptionPaymentRepository,
   ) {}
 
-  async execute(dto: RegisterSubscriptionPaymentDto)
-  {
+  async execute(dto: RegisterSubscriptionPaymentDto) {
     try {
-      const subscription = await this.subscriptionRepo.findById(dto.subscriptionId);
-
-      if (!subscription)
-    {
-        throw new NotFoundException('Subscrição não encontrada.');
-      }
-
-      if (subscription.status === SubscriptionStatus.CANCELLED) {
-        throw new BadRequestException('Subscrição cancelada não aceita pagamentos.');
-      }
-
-      const referenceMonth = new Date(dto.referenceMonth);
-      const dueDate = new Date(dto.dueDate);
-
-      if (dueDate < referenceMonth) {
-        throw new BadRequestException('Data limite inválida.');
-      }
-
-      const existing = await this.paymentRepo.findBySubscriptionAndMonth(
+      const subscription = await this.subscriptionRepo.findById(
         dto.subscriptionId,
-        referenceMonth,
       );
 
-      if (existing) {
-        throw new ConflictException('Pagamento já registado para este mês.');
+      if (!subscription) {
+        throw new NotFoundException(
+          "Subscrição não encontrada.",
+        );
       }
 
-      const paidAt = dto.paidAt ? new Date(dto.paidAt) : undefined;
+      if (
+        subscription.status === SubscriptionStatus.CANCELLED
+      ) {
+        throw new BadRequestException(
+          "Subscrição cancelada não aceita pagamentos.",
+        );
+      }
 
-      if (paidAt && paidAt > new Date()) {
-        throw new BadRequestException('Data de pagamento inválida.');
+      const referenceMonth =
+        subscription.currentPeriodStart;
+
+      const dueDate =
+        subscription.currentPeriodEnd;
+
+      const existing =
+        await this.paymentRepo.findBySubscriptionAndMonth(
+          dto.subscriptionId,
+          referenceMonth,
+        );
+
+      if (existing) {
+        throw new ConflictException(
+          "Pagamento já registado para este período.",
+        );
       }
 
       const payment = await this.paymentRepo.register({
         subscriptionId: dto.subscriptionId,
-        amount: SUBSCRIPTION_AMOUNT_AOA,
-        currency: SUBSCRIPTION_CURRENCY,
+
+        amount: Number(
+          process.env.SUBSCRIPTION_AMOUNT_AOA,
+        ),
+
+        currency:
+          process.env.SUBSCRIPTION_CURRENCY!,
+
         referenceMonth,
         dueDate,
-        paidAt,
+
+        paidAt: new Date(),
       });
 
-      if (paidAt && subscription.status === SubscriptionStatus.PAST_DUE) {
-        await this.subscriptionRepo.updateStatus(subscription.id, SubscriptionStatus.ACTIVE);
+      if (
+        subscription.status ===
+        SubscriptionStatus.PAST_DUE
+      ) {
+        await this.subscriptionRepo.updateStatus(
+          subscription.id,
+          SubscriptionStatus.ACTIVE,
+        );
       }
 
       return {
         success: true,
         statusCode: 201,
-        message: 'Pagamento registado com sucesso',
-        data: payment,
+        message:
+          "Pagamento registado com sucesso",
+        data:{
+          id: payment.id,
+          subscriptionId: payment.subscriptionId,
+          status: payment.status,
+          amount: payment.amount,
+          currency: payment.currency,
+          referenceMonth: payment.referenceMonth.toLocaleString(),
+          dueDate: payment.dueDate.toLocaleString(),
+          paidAt: payment.paidAt.toLocaleString(),
+          createdAt: payment.createdAt,
+        },
       };
     } catch (error) {
-      if (error instanceof HttpException) throw error;
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       console.log(error);
-      throw new InternalServerErrorException('Erro ao registar pagamento');
+
+      throw new InternalServerErrorException(
+        "Ocorreu um erro interno, tente novamente.",
+      );
     }
   }
 }

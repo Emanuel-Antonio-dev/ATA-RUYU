@@ -5,12 +5,14 @@ import { IAcademiesRepositories } from "../Repositories/IAcademies-repositories"
 import { AcademyStatus, PrismaClient } from "generated/prisma/client";
 import { PrismaService } from "src/lib/prisma.service";
 import { Role } from "src/Modules/Auth/Guards/roles.enum";
+import { CacheService } from "src/Modules/Cache/cache.service";
 @Injectable()
 class DeleteAcademyService {
   constructor(
     @Inject(IAcademiesRepositories)
     private readonly repository: IAcademiesRepositories,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async delete(id: string,credentials?: { sub: string; role: Role },)
@@ -33,6 +35,9 @@ class DeleteAcademyService {
             if(!deletedAcademy) throw new InternalServerErrorException("Ocorreu um erro ao deletar a academia.");
             return { success: true, statusCode: 200, message: "Academia deletada com sucesso." }
         }));
+        this.cacheService.invalidatePattern("academies:list:");
+        this.cacheService.invalidatePattern("academy:");
+        this.cacheService.invalidatePattern("dashboard:academy:");    
         return { success: transaction.success, statusCode: transaction.statusCode, message: transaction.message };
     } catch (error: any) {
             if(error instanceof HttpException)

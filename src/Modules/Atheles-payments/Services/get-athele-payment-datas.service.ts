@@ -19,11 +19,12 @@ class GetAtheletePaymentsService {
     try {
       if(!filters.atheleId) throw new NotFoundException("Informe o(a) atleta.");
         const existsAthelete = await this.repository.getAthleteDatas(filters.atheleId);
+
+        if (!existsAthelete) throw new NotFoundException("Atleta não encontrado(a).");
         if(existsAthelete.academy.id !== credentials?.sub)
         {
             throw new UnauthorizedException("Você não tem permissão para acessar este recurso")
         }
-        if (!existsAthelete) throw new NotFoundException("Atleta não encontrado(a).");
         const result = await this.paymentsRepository.getAthelePayments(filters)
         if(result.data.length === 0)
         {

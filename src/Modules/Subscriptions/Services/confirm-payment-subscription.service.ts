@@ -29,15 +29,18 @@ export class ConfirmSubscriptionPaymentService {
       const confirmed = await this.paymentRepo.markAsPaid(paymentId, new Date());
 
       const subscription = await this.subscriptionRepo.findById(payment.subscriptionId);
+      if(!subscription)
+      {
+        throw new NotFoundException("Subscrição não encontrada.")
+      }
 
-      if (subscription?.status === SubscriptionStatus.PAST_DUE) {
+      if (subscription.status === SubscriptionStatus.PAST_DUE) {
         const pending = await this.paymentRepo.findPendingBySubscription(subscription.id);
 
         if (pending.length === 0) {
           await this.subscriptionRepo.updateStatus(subscription.id, SubscriptionStatus.ACTIVE);
         }
       }
-
       return {
         success: true,
         statusCode: 200,
@@ -47,7 +50,7 @@ export class ConfirmSubscriptionPaymentService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       console.log(error);
-      throw new InternalServerErrorException('Erro ao confirmar pagamento');
+      throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
     }
   }
 }

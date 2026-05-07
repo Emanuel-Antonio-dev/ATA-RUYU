@@ -6,6 +6,7 @@ import { HttpException, InternalServerErrorException } from "@nestjs/common";
 import { PrismaService } from "src/lib/prisma.service";
 import { IAcademiesRepositories } from "src/Modules/Academies/Repositories/IAcademies-repositories";
 import { generateAffiliateNumber } from "src/Common/Utils/generate-codes";
+import { Role } from "src/Modules/Auth/Guards/roles.enum";
 
 @Injectable()
 class RegisterAthletesService
@@ -17,7 +18,7 @@ class RegisterAthletesService
         private readonly academyRepository: IAcademiesRepositories,
         private readonly prisma: PrismaService
     ){}
-    async register(datas: CreateAthleteDto): Promise<any>
+    async register(datas: CreateAthleteDto, credentials?:{sub: string, role: Role}): Promise<any>
     {
         try
         {
@@ -25,6 +26,7 @@ class RegisterAthletesService
             {
                 throw new BadRequestException("É obrigatório enviar a foto do atleta.")
             }
+
         const sanitizedData = {
             fullName: sanitize(datas.fullName,
                 {
@@ -53,7 +55,7 @@ class RegisterAthletesService
             });
             if (!conflict) break;
         }
-        const existsAcademy = await this.academyRepository.findAcademyById({action:"OnlyBasicsDatas"},datas.academyId, undefined)
+        const existsAcademy = await this.academyRepository.findAcademyById({action:"OnlyBasicsDatas"},credentials?.sub, undefined)
         if(!existsAcademy)
         {
             throw new BadRequestException("A academia associada não foi encontrada.")
@@ -64,7 +66,7 @@ class RegisterAthletesService
             throw new BadRequestException("Já existe um atleta registrado com este número de documento.")
         }
         const athlete = await this.repository.registerAthlete({
-            academyId: datas.academyId,
+            academyId: credentials?.sub!,
             email: datas.email,
             phoneNumber: datas.phoneNumber,
             emergencyPhone: datas.emergencyPhone,

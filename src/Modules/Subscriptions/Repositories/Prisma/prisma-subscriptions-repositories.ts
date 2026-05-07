@@ -39,18 +39,22 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
     });
   }
 
-  register(data: RegisterSubscriptionData) {
-    return this.prisma.subscription.create({
-      data: {
-        academyId: data.academyId,
-        currentPeriodStart: data.currentPeriodStart,
-        currentPeriodEnd: data.currentPeriodEnd,
-        amount: data.amount ?? 35_500,
-        currency: data.currency ?? 'AOA',
-        status: SubscriptionStatus.ACTIVE,
-      },
-    });
-  }
+register(data: RegisterSubscriptionData) {
+  return this.prisma.subscription.create({
+    data: {
+      academyId: data.academyId,
+      currentPeriodStart: new Date(),
+
+      currentPeriodEnd: data.currentPeriodEnd
+        ? new Date(data.currentPeriodEnd)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+
+      amount: data.amount ?? 35_500,
+      currency: data.currency ?? "AOA",
+      status: SubscriptionStatus.ACTIVE,
+    },
+  });
+}
 
   updateStatus(id: string, status: SubscriptionStatus) {
     return this.prisma.subscription.update({

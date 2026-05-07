@@ -6,6 +6,7 @@ import {
     Param,
     Body,
     HttpCode,
+    Req
   } from '@nestjs/common';
   
   import {
@@ -14,8 +15,8 @@ import {
     ApiResponse,
     ApiParam,
     ApiBody,
+    ApiBearerAuth,
   } from '@nestjs/swagger';
-  
   // SERVICES  
   // DTO
 import { RegisterSubscriptionPaymentService } from '../Services/register-payment.service';
@@ -26,8 +27,12 @@ import { ListOverduePaymentsService } from '../Services/list-ordue-payments.serv
 import { GetSubscriptionPaymentHistoryService } from '../Services/find-payments-hystory.service';
 import { RenewSubscriptionService } from '../Services/renew-subscription.service';
 import { RegisterSubscriptionService } from '../Services/register-subscription.service';
+import { Roles } from 'src/Common/Decorators/roles.decorator';
+import { Role } from 'src/Modules/Auth/Guards/roles.enum';
+import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
 
   @ApiTags('Subscriptions')
+  @ApiBearerAuth('accessToken')
   @Controller('subscriptions')
   export class SubscriptionController {
     constructor(
@@ -41,21 +46,9 @@ import { RegisterSubscriptionService } from '../Services/register-subscription.s
     ) {}
   
     // ─────────────────────────────────────────────────────────────
-    // CREATE SUBSCRIPTION
-    // ─────────────────────────────────────────────────────────────
-  
-    @Post(':academyId')
-    @ApiOperation({ summary: 'Criar subscrição para uma academia' })
-    @ApiParam({ name: 'academyId', example: 'academy_123' })
-    @ApiResponse({ status: 201, description: 'Subscrição criada com sucesso' })
-    async create(@Param('academyId') academyId: string) {
-      return this.createSubscriptionService.execute(academyId);
-    }
-  
-    // ─────────────────────────────────────────────────────────────
     // REGISTER PAYMENT
     // ─────────────────────────────────────────────────────────────
-  
+    @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
     @Post('payments')
     @ApiOperation({ summary: 'Registar pagamento de subscrição' })
     @ApiBody({ type: RegisterSubscriptionPaymentDto })
@@ -63,11 +56,25 @@ import { RegisterSubscriptionService } from '../Services/register-subscription.s
     async registerPayment(@Body() dto: RegisterSubscriptionPaymentDto) {
       return this.registerPaymentService.execute(dto);
     }
+    // ─────────────────────────────────────────────────────────────
+    // CREATE SUBSCRIPTION
+    // ─────────────────────────────────────────────────────────────
+
+    @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
+    @Post(':academyId')
+    @ApiOperation({ summary: 'Criar subscrição para uma academia' })
+    @ApiParam({ name: 'academyId', example: 'academy_123' })
+    @ApiResponse({ status: 201, description: 'Subscrição criada com sucesso' })
+    async create(@Param('academyId') academyId: string, @Req() req: RequestWithCredentials) {
+      const credentials = req.credentials
+      return this.createSubscriptionService.execute(academyId, credentials);
+    }
   
+
     // ─────────────────────────────────────────────────────────────
     // CONFIRM PAYMENT
     // ─────────────────────────────────────────────────────────────
-  
+    @Roles(Role.ADMIN_DEV)
     @Patch('payments/:paymentId/confirm')
     @ApiOperation({ summary: 'Confirmar pagamento' })
     @ApiParam({ name: 'paymentId', example: 'payment_123' })
@@ -80,6 +87,7 @@ import { RegisterSubscriptionService } from '../Services/register-subscription.s
     // CANCEL SUBSCRIPTION
     // ─────────────────────────────────────────────────────────────
   
+    @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN, Role.ADMIN_DEV)
     @Patch(':subscriptionId/cancel')
     @ApiOperation({ summary: 'Cancelar subscrição' })
     @ApiParam({ name: 'subscriptionId', example: 'sub_123' })
@@ -91,7 +99,7 @@ import { RegisterSubscriptionService } from '../Services/register-subscription.s
     // ─────────────────────────────────────────────────────────────
     // RENEW SUBSCRIPTION
     // ─────────────────────────────────────────────────────────────
-  
+    @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN, Role.ADMIN_DEV)
     @Patch(':subscriptionId/renew')
     @ApiOperation({ summary: 'Renovar subscrição' })
     @ApiParam({ name: 'subscriptionId', example: 'sub_123' })
@@ -104,6 +112,7 @@ import { RegisterSubscriptionService } from '../Services/register-subscription.s
     // PAYMENT HISTORY
     // ─────────────────────────────────────────────────────────────
   
+    @Roles(Role.ADMIN_DEV)
     @Get(':subscriptionId/payments')
     @ApiOperation({ summary: 'Listar histórico de pagamentos' })
     @ApiParam({ name: 'subscriptionId', example: 'sub_123' })
@@ -116,6 +125,7 @@ import { RegisterSubscriptionService } from '../Services/register-subscription.s
     // OVERDUE PAYMENTS
     // ─────────────────────────────────────────────────────────────
   
+    @Roles(Role.ADMIN_DEV)
     @Get('payments/overdue')
     @ApiOperation({ summary: 'Listar pagamentos vencidos' })
     @ApiResponse({ status: 200, description: 'Pagamentos vencidos listados' })

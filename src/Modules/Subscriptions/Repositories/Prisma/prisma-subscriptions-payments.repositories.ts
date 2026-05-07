@@ -76,9 +76,7 @@ export class PrismaSubscriptionPaymentRepository implements ISubscriptionPayment
         referenceMonth: data.referenceMonth,
         dueDate: data.dueDate,
         paidAt: data.paidAt,
-        status: data.paidAt
-          ? SubscriptionPaymentStatus.PAID
-          : (data.status ?? SubscriptionPaymentStatus.PENDING),
+        status: "PENDING"
       },
     });
   }

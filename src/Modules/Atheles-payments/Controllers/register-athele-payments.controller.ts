@@ -20,17 +20,18 @@ import { CreatePaymentDto }              from '../Dtos/create-payment.dto';
 import { Role }                          from 'src/Modules/Auth/Guards/roles.enum';
 import { Roles } from 'src/Common/Decorators/roles.decorator';
 import { RegisterAthletePaymentsService } from '../Services/register-athele-payments.service';
+import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
 
 @ApiTags('Athletes/payments')
-@ApiBearerAuth()
+@ApiBearerAuth("accessToken")
 @Controller('athlete-payments')
 export class RegisterAthletePaymentController {
   constructor(
     private readonly registerPaymentService: RegisterAthletePaymentsService,
   ) {}
-
+  
+  @Roles(Role.CENTRAL, Role.AFFILIATE)
   @Post()
-  @Roles(Role.AFFILIATE_ADMIN, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
   @ApiOperation({
     summary:     'Registar pagamento de mensalidade',
     description: 'Regista o pagamento de mensalidade de um atleta da academia autenticada.',
@@ -52,7 +53,8 @@ export class RegisterAthletePaymentController {
     description: 'Token inválido ou ausente.',
     schema: { example: { statusCode: 401, message: 'Unauthorized' } },
   })
-  async register(@Body() body: CreatePaymentDto, @Req() req: any) {
-    return this.registerPaymentService.register(body, req.user);
+  async register(@Body() body: CreatePaymentDto, @Req() req: RequestWithCredentials) {
+    const credentials = req.credentials
+    return this.registerPaymentService.register(body, credentials);
   }
 }

@@ -5,6 +5,7 @@ import { Injectable, Inject, HttpException, InternalServerErrorException, Confli
 import { PrismaService } from "src/lib/prisma.service";
 import { RegisterAccountService } from "src/Modules/Accounts/Services/register-account.service";
 import { generateAffiliateNumber } from "src/Common/Utils/generate-codes";
+import {CacheService} from "../../Cache/cache.service";
 
 @Injectable()
 class RegisterAcademyService
@@ -14,6 +15,7 @@ class RegisterAcademyService
         private readonly repositoy: IAcademiesRepositories,
         private readonly accountsService: RegisterAccountService,
         private readonly prisma: PrismaService,
+        private readonly cacheService: CacheService,
     ){}
 
     async register(datas: CreateAcademyRequestDto)
@@ -103,6 +105,11 @@ class RegisterAcademyService
                 }
 
             }))
+            
+            this.cacheService.invalidatePattern("academies:list:");
+            this.cacheService.invalidatePattern("academy:");
+            this.cacheService.invalidatePattern("dashboard:academy:");            
+            
             const message = transaction.type === 'CENTRAL'
             ? 'Academia central criada com sucesso. Acesso liberado.'
             : 'Academia afiliada criada com sucesso. Aguarde a aprovação da Central.';

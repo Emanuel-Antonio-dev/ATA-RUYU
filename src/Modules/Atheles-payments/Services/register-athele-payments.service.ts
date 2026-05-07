@@ -37,7 +37,7 @@ class RegisterAthletePaymentsService
         const duplicate = await this.prisma.athelePayment.findFirst({
             where: {
                 athleteId:      datas.athleteId,
-                referenceMonth: datas.referenceMonth,
+                referenceMonth: new Date(datas.referenceMonth),
             },
         });
         if (duplicate)
@@ -47,8 +47,8 @@ class RegisterAthletePaymentsService
         const result = await this.paymentsRepositories.registerAthelePayment({
             amount: datas.amount,
             athleteId: datas.athleteId,
-            paidAt: datas.paidAt,
-            referenceMonth: datas.referenceMonth
+            paidAt: new Date(datas.paidAt!),
+            referenceMonth: new Date(datas.referenceMonth)
         })
         if(!result)
         {

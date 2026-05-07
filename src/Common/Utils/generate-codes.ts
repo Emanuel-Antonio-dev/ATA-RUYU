@@ -2,7 +2,7 @@ import { randomBytes, createHash} from "node:crypto";
 
 const CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const SEGMENT_LENGTH = 4;
-const SEGMENT_COUNT = 3; // 3 segmentos de 4 = 12 dígitos
+const SEGMENT_COUNT = 5; // 4 segmentos de 5 = 20 dígitos
 
 function generateSegment(): string {
   const bytes = randomBytes(SEGMENT_LENGTH);

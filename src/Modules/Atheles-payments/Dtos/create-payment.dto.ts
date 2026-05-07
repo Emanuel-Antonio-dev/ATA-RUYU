@@ -30,15 +30,14 @@ export class CreatePaymentDto {
     example: '2026-02-01',
     description: 'Mês de referência do pagamento (primeiro dia do mês, ISO 8601)',
   })
-  @IsDateString()
+  @IsDateString({},{message:"Informe uma data válida(2026-10-01)"})
   @IsNotEmpty()
-  referenceMonth!: string;
+  referenceMonth!: Date;
   
   @ApiPropertyOptional({
     example: '2026-02-08',
     description: 'Data em que o pagamento foi efectuado (ISO 8601)',
   })
   @IsOptional()
-  @IsDateString()
-  paidAt?: string;
+  paidAt?: Date;
 }

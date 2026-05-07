@@ -26,6 +26,10 @@ export class DeleteDownloadKeyService {
         {
             throw new NotFoundException("Esta chave de download não existe.")
         }
+        if(existsKey.status == "USED")
+        {
+            throw new BadRequestException("Apenas chaves activas podem ser eliminadas.")
+        }
         const result = await this.repository.deleteDownloadKey(params);
         if (!result){throw new NotFoundException("Ocorreu um erro ao deletar esta chave de download.");}
         return {success: true, statusCode: 200, message:"Chave de download deletada com sucesso."};    
