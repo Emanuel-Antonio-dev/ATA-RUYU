@@ -17,4 +17,5 @@ export abstract class ISubscriptionRepository {
   abstract register(data: RegisterSubscriptionDto): Promise<any>;
   abstract updateStatus(id: string, status: SubscriptionStatus): Promise<any>;
   abstract renewPeriod(id: string, start: Date, end: Date): Promise<any>;
+  abstract findPastDueSince(date: Date): Promise<any[]>;
 }

@@ -30,7 +30,7 @@ export class ExpireSubscriptionsCron {
         expired.map(async (sub) => {
           await this.subscriptionRepo.updateStatus(
             sub.id,
-            SubscriptionStatus.PAST_DUE,
+            SubscriptionStatus.PAST_DUE
           );
 
           this.logger.warn(`Subscrição ${sub.id} movida para PAST_DUE`);

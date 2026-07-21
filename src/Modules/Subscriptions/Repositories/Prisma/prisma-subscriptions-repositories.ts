@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/lib/prisma.service';
 import { ISubscriptionRepository, RegisterSubscriptionData } from '../ISubscriptions-repositories';
-import { SubscriptionStatus } from 'generated/prisma/enums';
+import { AcademyStatus, SubscriptionStatus } from 'generated/prisma/enums';
 
 @Injectable()
 export class PrismaSubscriptionRepository implements ISubscriptionRepository {
@@ -73,4 +73,28 @@ register(data: RegisterSubscriptionData) {
       },
     });
   }
+  findPastDueSince(date: Date) {
+  return this.prisma.subscription.findMany({
+    where: {
+      status: SubscriptionStatus.PAST_DUE,
+      currentPeriodEnd: {
+        lte: date,
+      },
+      academy: {
+        status: {
+          not: AcademyStatus.SUSPENDED,
+        },
+      },
+    },
+    include: {
+      academy: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+      },
+    },
+  });
+}
 }

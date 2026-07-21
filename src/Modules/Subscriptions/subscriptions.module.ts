@@ -14,6 +14,9 @@ import { GetSubscriptionPaymentHistoryService } from './Services/find-payments-h
 import { PrismaService } from 'src/lib/prisma.service';
 import { AcademiesModule } from '../Academies/academies.module';
 import { StartTrialSubscriptionService } from './Services/start-trial-subscription.service';
+import { MarkOverduePaymentsCron } from 'src/Common/Jobs/mark-overdue-payments.cron';
+import { ExpireSubscriptionsCron } from 'src/Common/Jobs/expire-subscriptions.cron';
+import { SuspendOverdueSubscriptionsCron } from 'src/Common/Jobs/suspend-overdue-subscriptions.cron';
 
 @Module({
   imports: [AcademiesModule],
@@ -35,7 +38,10 @@ import { StartTrialSubscriptionService } from './Services/start-trial-subscripti
     RenewSubscriptionService,
     CancelSubscriptionService,
     GetSubscriptionPaymentHistoryService,
-    StartTrialSubscriptionService
+    StartTrialSubscriptionService,
+    MarkOverduePaymentsCron,
+    ExpireSubscriptionsCron,
+    SuspendOverdueSubscriptionsCron
   ],
   exports: [
     RegisterSubscriptionService,
