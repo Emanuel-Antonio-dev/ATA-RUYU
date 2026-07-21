@@ -6,6 +6,7 @@ import { JwtOperations } from "src/Common/Utils/AuthenticationsProcols/JwtOperat
 import { PrismaService } from "../../../lib/prisma.service";
 import { InitAuthenticationsService } from "./init-authentications.service";
 import { RegisterTokensService } from "./register-tokens.service";
+import { StartTrialSubscriptionService } from "src/Modules/Subscriptions/Services/start-trial-subscription.service";
 
 @Injectable()
 class SignInService
@@ -17,7 +18,9 @@ class SignInService
         private readonly repository: IAuthenticationRepositories,
         private readonly prisma: PrismaService,
         private readonly initAuthenticationsService: InitAuthenticationsService,
-        private readonly registerTokensService: RegisterTokensService
+        private readonly registerTokensService: RegisterTokensService,
+        private readonly startTrialSubscriptionService: StartTrialSubscriptionService
+
     ){}
 
     async signin(datas: AutehticationsDto)
@@ -29,19 +32,26 @@ class SignInService
             {
                 throw new UnauthorizedException("Credencias inválidas")
             }
-            if(account.academy && account.academy.status === "PENDING")
-            {
-                throw new UnauthorizedException("O registro da sua academia ainda não foi aprovada pela central, por favor aguarde.")
-            }
             const isValidPassword = await bcrypt.compare(datas.password, account.passwordHash)
             if (!isValidPassword)
             {
                 throw new UnauthorizedException("Credencias inválidas.")
             }
+            if(account.academy && account.academy.status === "PENDING")
+            {
+                throw new UnauthorizedException("O registro da sua academia ainda não foi aprovada pela central, por favor aguarde.")
+            }
+            let subscription = account.academy.subscription ?? null
+            console.log(subscription)
+            if(account.academy && !subscription && account.academy.type != "CENTRAL")
+            {
+                subscription = await this.startTrialSubscriptionService.execute(account.academy.id)
+            }
+
             let payload
             if(account.academy)
             {
-                payload = {sub: account.academy.id, role: account.academy.type}
+                payload = {sub: account.academy.id, role: account.academy.type, subscriptionStatus: subscription?.status ?? "TRIALING"}
             }
             else if(account.user)
             {

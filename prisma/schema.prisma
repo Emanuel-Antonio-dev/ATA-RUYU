@@ -487,6 +487,7 @@ enum PaymentStatus {
 }
 
 enum SubscriptionStatus {
+  TRIALING
   ACTIVE
   PAST_DUE
   SUSPENDED

@@ -62,7 +62,14 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
                             isActive: true,
                             enrolledAt: true
                         }
-                    }
+                    },subscription: {
+                        select: {
+                            status:          true,
+                            currentPeriodStart: true,
+                            amount: true,
+                            currentPeriodEnd: true,
+                        },
+                    },
                  }})
     }
         return await this.prisma.academy.findFirst({where:{name: name}, 
@@ -89,7 +96,14 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
                             isActive: true,
                             enrolledAt: true
                         }
-                    }
+                    },subscription: {
+                        select: {
+                            status:          true,
+                            currentPeriodStart: true,
+                            amount: true,
+                            currentPeriodEnd: true,
+                        },
+                    },
                  }})
   }
   async setAcademyStatus(id: string, status: AcademyStatus): Promise<any> {
@@ -193,10 +207,11 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
                             phone:    true,
                             isActive: true,
                         },
-                    },
-                    subscription: {
+                    },subscription: {
                         select: {
                             status:          true,
+                            currentPeriodStart: true,
+                            amount: true,
                             currentPeriodEnd: true,
                         },
                     },

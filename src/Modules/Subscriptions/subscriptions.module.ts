@@ -13,6 +13,7 @@ import { CancelSubscriptionService } from './Services/cancel-payment-subscriptio
 import { GetSubscriptionPaymentHistoryService } from './Services/find-payments-hystory.service';
 import { PrismaService } from 'src/lib/prisma.service';
 import { AcademiesModule } from '../Academies/academies.module';
+import { StartTrialSubscriptionService } from './Services/start-trial-subscription.service';
 
 @Module({
   imports: [AcademiesModule],
@@ -33,7 +34,18 @@ import { AcademiesModule } from '../Academies/academies.module';
     ConfirmSubscriptionPaymentService,
     RenewSubscriptionService,
     CancelSubscriptionService,
-    GetSubscriptionPaymentHistoryService
+    GetSubscriptionPaymentHistoryService,
+    StartTrialSubscriptionService
   ],
+  exports: [
+    RegisterSubscriptionService,
+    RegisterSubscriptionPaymentService,
+    ListOverduePaymentsService,
+    ConfirmSubscriptionPaymentService,
+    RenewSubscriptionService,
+    CancelSubscriptionService,
+    GetSubscriptionPaymentHistoryService,
+    StartTrialSubscriptionService
+  ]
 })
 export class SubscriptionsModule {}

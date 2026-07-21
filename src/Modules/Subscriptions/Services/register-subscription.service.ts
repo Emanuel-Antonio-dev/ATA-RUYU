@@ -28,7 +28,7 @@ export class RegisterSubscriptionService {
 
       if(credentials?.sub !== academyId)
       {
-        throw new UnauthorizedException("Você não tem permissão para realizar esta operação.")
+        throw new UnauthorizedException("Você não tem permissão para ativar a subscrição de outra academia.")
       }
       const result = await this.subscriptionRepo.register({
         academyId,

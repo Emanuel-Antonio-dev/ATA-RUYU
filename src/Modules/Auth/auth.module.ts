@@ -31,11 +31,13 @@ import { OtpGeneratorService } from "src/Common/Utils/AuthenticationsProcols/2FA
 import { SendOtpController } from "./Controllers/send-otp-code.controller";
 import { GetCurrentAcademyController } from "./Controllers/me.controller";
 import { GetCurrentAcademyService } from "./Services/get-current-academy.service";
+import { SubscriptionsModule } from "../Subscriptions/subscriptions.module";
 
 @Module({
     imports:[
         AccountModule,
-        EmailModule
+        EmailModule,
+        SubscriptionsModule
     ],
     controllers:[
         SignInController,
