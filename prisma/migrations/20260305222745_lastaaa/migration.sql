@@ -1,5 +1,0 @@
--- AlterTable
-ALTER TABLE "tbl_graduations" ALTER COLUMN "fromBelt" DROP NOT NULL,
-ALTER COLUMN "fromDegree" DROP NOT NULL,
-ALTER COLUMN "toBelt" DROP NOT NULL,
-ALTER COLUMN "toDegree" DROP NOT NULL;

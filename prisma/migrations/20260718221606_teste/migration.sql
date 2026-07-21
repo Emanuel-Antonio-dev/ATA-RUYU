@@ -23,7 +23,7 @@ CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'PAST_DUE', 'SUSPENDED', 'CA
 CREATE TYPE "SubscriptionPaymentStatus" AS ENUM ('PENDING', 'PAID', 'OVERDUE');
 
 -- CreateEnum
-CREATE TYPE "GraduationStatus" AS ENUM ('ELIGIBLE', 'NOT_ELIGIBLE', 'APPROVED', 'COMPLETED');
+CREATE TYPE "GraduationStatus" AS ENUM ('NOT_APPROVED', 'APPROVED', 'PENDING');
 
 -- CreateEnum
 CREATE TYPE "DownloadKeyStatus" AS ENUM ('ACTIVE', 'USED', 'EXPIRED', 'REVOKED');
@@ -197,20 +197,17 @@ CREATE TABLE "tbl_athletes" (
 );
 
 -- CreateTable
-CREATE TABLE "tbl_payments" (
+CREATE TABLE "tbl_athele_payments" (
     "id" TEXT NOT NULL,
     "athleteId" TEXT NOT NULL,
-    "academyId" TEXT NOT NULL,
     "amount" DECIMAL(12,2) NOT NULL,
-    "currency" TEXT NOT NULL DEFAULT 'AOA',
     "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "referenceMonth" TIMESTAMP(3) NOT NULL,
-    "dueDate" TIMESTAMP(3) NOT NULL,
     "paidAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "tbl_payments_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "tbl_athele_payments_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -230,11 +227,11 @@ CREATE TABLE "tbl_graduations" (
     "id" TEXT NOT NULL,
     "athleteId" TEXT NOT NULL,
     "academyId" TEXT NOT NULL,
-    "fromBelt" "BeltColor" NOT NULL,
-    "fromDegree" "BeltDegree" NOT NULL,
-    "toBelt" "BeltColor" NOT NULL,
-    "toDegree" "BeltDegree" NOT NULL,
-    "status" "GraduationStatus" NOT NULL DEFAULT 'NOT_ELIGIBLE',
+    "fromBelt" "BeltColor",
+    "fromDegree" "BeltDegree",
+    "toBelt" "BeltColor",
+    "toDegree" "BeltDegree",
+    "status" "GraduationStatus" NOT NULL DEFAULT 'PENDING',
     "totalClasses" INTEGER NOT NULL,
     "attendedClasses" INTEGER NOT NULL,
     "graduatedAt" TIMESTAMP(3),
@@ -247,8 +244,7 @@ CREATE TABLE "tbl_graduations" (
 -- CreateTable
 CREATE TABLE "tbl_graduation_reviews" (
     "id" TEXT NOT NULL,
-    "graduationId" TEXT NOT NULL,
-    "reviewedById" TEXT NOT NULL,
+    "athleteId" TEXT NOT NULL,
     "technicalScore" INTEGER,
     "behaviorScore" INTEGER,
     "comment" TEXT NOT NULL,
@@ -261,7 +257,7 @@ CREATE TABLE "tbl_graduation_reviews" (
 -- CreateTable
 CREATE TABLE "tbl_championships" (
     "id" TEXT NOT NULL,
-    "academyId" TEXT NOT NULL,
+    "athleteId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "scheduledAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -371,10 +367,10 @@ CREATE INDEX "tbl_athletes_academyId_idx" ON "tbl_athletes"("academyId");
 CREATE INDEX "tbl_athletes_affiliateCode_idx" ON "tbl_athletes"("affiliateCode");
 
 -- CreateIndex
-CREATE INDEX "tbl_payments_academyId_status_idx" ON "tbl_payments"("academyId", "status");
+CREATE INDEX "tbl_athele_payments_status_idx" ON "tbl_athele_payments"("status");
 
 -- CreateIndex
-CREATE INDEX "tbl_payments_athleteId_referenceMonth_idx" ON "tbl_payments"("athleteId", "referenceMonth");
+CREATE INDEX "tbl_athele_payments_athleteId_referenceMonth_idx" ON "tbl_athele_payments"("athleteId", "referenceMonth");
 
 -- CreateIndex
 CREATE INDEX "tbl_attendances_academyId_classDate_idx" ON "tbl_attendances"("academyId", "classDate");
@@ -389,10 +385,10 @@ CREATE INDEX "tbl_graduations_academyId_idx" ON "tbl_graduations"("academyId");
 CREATE INDEX "tbl_graduations_athleteId_idx" ON "tbl_graduations"("athleteId");
 
 -- CreateIndex
-CREATE INDEX "tbl_graduation_reviews_graduationId_idx" ON "tbl_graduation_reviews"("graduationId");
+CREATE INDEX "tbl_graduation_reviews_athleteId_idx" ON "tbl_graduation_reviews"("athleteId");
 
 -- CreateIndex
-CREATE INDEX "tbl_championships_academyId_idx" ON "tbl_championships"("academyId");
+CREATE INDEX "tbl_championships_athleteId_idx" ON "tbl_championships"("athleteId");
 
 -- CreateIndex
 CREATE INDEX "tbl_audit_logs_academyId_createdAt_idx" ON "tbl_audit_logs"("academyId", "createdAt");
@@ -434,7 +430,7 @@ ALTER TABLE "tbl_download_keys" ADD CONSTRAINT "tbl_download_keys_academyId_fkey
 ALTER TABLE "tbl_athletes" ADD CONSTRAINT "tbl_athletes_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_payments" ADD CONSTRAINT "tbl_payments_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tbl_athele_payments" ADD CONSTRAINT "tbl_athele_payments_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tbl_attendances" ADD CONSTRAINT "tbl_attendances_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -443,13 +439,10 @@ ALTER TABLE "tbl_attendances" ADD CONSTRAINT "tbl_attendances_athleteId_fkey" FO
 ALTER TABLE "tbl_graduations" ADD CONSTRAINT "tbl_graduations_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_graduation_reviews" ADD CONSTRAINT "tbl_graduation_reviews_graduationId_fkey" FOREIGN KEY ("graduationId") REFERENCES "tbl_graduations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tbl_graduation_reviews" ADD CONSTRAINT "tbl_graduation_reviews_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tbl_graduation_reviews" ADD CONSTRAINT "tbl_graduation_reviews_reviewedById_fkey" FOREIGN KEY ("reviewedById") REFERENCES "tbl_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "tbl_championships" ADD CONSTRAINT "tbl_championships_academyId_fkey" FOREIGN KEY ("academyId") REFERENCES "tbl_academies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tbl_championships" ADD CONSTRAINT "tbl_championships_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "tbl_athletes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tbl_audit_logs" ADD CONSTRAINT "tbl_audit_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "tbl_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

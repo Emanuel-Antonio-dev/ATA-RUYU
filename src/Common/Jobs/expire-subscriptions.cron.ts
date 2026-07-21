@@ -21,7 +21,6 @@ export class ExpireSubscriptionsCron {
       this.logger.log('[CRON] Verificando subscrições expiradas...');
 
       const expired = await this.subscriptionRepo.findExpired();
-
       if (expired.length === 0) {
         this.logger.log('Nenhuma subscrição expirada');
         return;

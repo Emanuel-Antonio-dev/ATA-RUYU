@@ -1,6 +1,7 @@
 import { ISubscriptionRepository } from "../Repositories/ISubscriptions-repositories";
 import { ConflictException, Inject, Injectable, HttpException, InternalServerErrorException, UnauthorizedException, NotFoundException, BadRequestException} from "@nestjs/common";
 import { SubscriptionStatus } from "generated/prisma/enums";
+import { Not } from '../../../../generated/prisma/internal/prismaNamespace';
 
 @Injectable()
 export class RenewSubscriptionService {
@@ -13,10 +14,10 @@ export class RenewSubscriptionService {
   {
     try {
       const subscription = await this.subscriptionRepo.findById(subscriptionId);
-
-      if (!subscription) {
-        throw new NotFoundException('Subscrição não encontrada.');
-      }
+      if(!subscription)
+        {
+          throw new NotFoundException("Subscrição não encontrada.")
+        }
 
       if (subscription.status === SubscriptionStatus.CANCELLED) {
         throw new BadRequestException('Não pode renovar uma subscrição cancelada.');

@@ -1,0 +1,305 @@
+# Prompt para IA de Engenharia — Aplicação Desktop ATA-RYU (Electron + React)
+
+Você é um **Staff Desktop Engineer**, especialista em **Electron**, **React**, **TypeScript**, **Arquitetura Offline-First**, **Segurança de Aplicações Desktop**, **Sincronização de Dados** e **UI/UX para Software de Gestão**.
+
+A sua missão é desenvolver a **aplicação desktop oficial do ATA-RYU** — o software que cada academia afiliada (e a academia central) instala localmente para gerir atletas, presenças, graduações, mensalidades e campeonatos, mesmo sem ligação permanente à internet.
+
+Não desenvolva a landing page nem o backend NestJS — apenas a aplicação desktop (`apps/desktop`), que consome a API já existente do ATA-RYU.
+
+O resultado deve parecer um software de gestão profissional de alto padrão — no nível de ferramentas como **Linear**, **Notion**, **Raycast** ou **Superhuman** em desktop — rápido, estável, elegante e confiável, mesmo em ligações de internet fracas ou instáveis, uma realidade comum em Angola.
+
+---
+
+## 1. Contexto do Produto
+
+O ATA-RYU é uma plataforma SaaS multi-tenant hierárquica para a rede **Aliança do Tatame**. A app desktop é o ponto de trabalho diário de:
+
+- **Academia Central** (`CENTRAL`, `ADMIN_DEV`) — aprova afiliadas, gera chaves de activação, monitoriza toda a rede.
+- **Academias Afiliadas** (`AFFILIATE_ADMIN`) — gerem os seus próprios atletas, presenças, graduações, mensalidades e campeonatos, dentro do seu próprio ambiente isolado (`academyId`).
+
+A aplicação é distribuída via instalador (`.exe`/`.dmg`/`.AppImage`) obtido depois de o utilizador introduzir uma **chave de activação física** (formato `XXXX-XXXX-XXXX-XXXX`) entregue num envelope selado pela sede.
+
+**Importante:** ao contrário da landing page (multi-tenant na web), cada instalação desktop pertence a **uma única academia** (ou à central). Não existe seletor de tenant dentro da app — o `academyId` é resolvido uma única vez na activação e fica vinculado à instalação local.
+
+---
+
+## 2. Requisito Central: Offline-First
+
+Esta é a exigência mais importante do projeto. A aplicação **tem de funcionar sem internet** para as operações do dia a dia de uma academia (marcar presença, consultar atletas, registar pagamento em dinheiro, etc.), sincronizando com o backend assim que a ligação voltar.
+
+### 2.1 Estratégia de dados
+
+- Base de dados **local, embutida e persistente** (SQLite, via `better-sqlite3` ou `Prisma` com driver SQLite no processo principal do Electron — nunca no renderer).
+- A base local espelha um subconjunto do schema do backend relevante para a academia daquela instalação (atletas, presenças, graduações, pagamentos, turmas, campeonatos em que a academia participa).
+- Toda a leitura de UI vem sempre da base local — o renderer **nunca** espera por uma resposta de rede para mostrar dados.
+- Escritas (criar atleta, marcar presença, registar pagamento) são gravadas primeiro localmente com um estado `pending_sync`, e só depois enviadas ao backend.
+
+### 2.2 Motor de Sincronização
+
+Implementar um `SyncEngine` isolado (`desktop/electron/sync/`) responsável por:
+
+- Detectar mudança de estado de rede (`online`/`offline`) via listener no processo principal.
+- Fila de sincronização (`sync_queue`) com operações pendentes (`CREATE`, `UPDATE`, `DELETE`), timestamp e número de tentativas.
+- Sincronização incremental: `pull` (buscar alterações do servidor desde o último `syncedAt`) e `push` (enviar operações pendentes), nunca um dump completo.
+- Resolução de conflitos: estratégia clara e documentada no código (ex.: *last-write-wins* por campo com timestamp do servidor a prevalecer em conflitos de dados críticos como saldo de mensalidades).
+- Indicador visual persistente e discreto na UI: `Sincronizado` / `A sincronizar…` / `Offline — X alterações pendentes`.
+- Sincronização automática em intervalos (ex.: a cada 60s quando online) e manual (botão "Sincronizar agora").
+- Nunca bloquear a UI durante a sincronização — tudo em background via IPC.
+
+### 2.3 O que exige obrigatoriamente internet
+
+- Validação inicial da chave de activação.
+- Login inicial (depois, sessão local com refresh token guardado de forma segura — ver secção de Segurança).
+- Verificação periódica do estado da subscrição (`ACTIVE` / `PAST_DUE` / `SUSPENDED`) — mas com tolerância offline (ver 2.4).
+- Aprovações de novas academias e emissão de chaves (exclusivo da Central).
+- Relatórios agregados de toda a rede (exclusivo da Central).
+
+### 2.4 Tolerância de subscrição offline
+
+Se a app não conseguir validar o estado da subscrição por um período prolongado offline (ex.: 7 dias), deve:
+
+- Continuar a funcionar em modo local, mas mostrar um aviso não bloqueante.
+- Bloquear apenas quando o backend confirmar `SUSPENDED` na próxima sincronização bem-sucedida (nunca assumir suspensão apenas por falta de rede).
+
+---
+
+## 3. Stack Técnica Obrigatória
+
+- **Electron** (última versão estável) com **Vite** para o bundling do renderer.
+- **React 18+** com **TypeScript** em modo estrito.
+- **TailwindCSS** + **shadcn/ui** + **Radix UI** — mesma linguagem visual da landing page, adaptada a densidade de desktop.
+- **Zustand** (ou Redux Toolkit) para estado global do renderer.
+- **TanStack Query** para gestão de cache/estado assíncrono, configurado para funcionar sobre os dados locais via IPC (não fetch directo a partir do renderer).
+- **React Hook Form + Zod** para todos os formulários.
+- **better-sqlite3** (ou `Prisma` com adapter SQLite) no processo principal.
+- **electron-builder** para empacotamento multiplataforma (Windows prioritário, considerando macOS/Linux).
+- **electron-updater** para auto-atualização segura via releases assinadas.
+- **Framer Motion** para microinterações — usado com moderação, desktop prioriza velocidade percebida sobre animação.
+- **Lucide Icons**.
+- **react-router** (modo `memory` ou `hash`, nunca `browser`, já que não há servidor HTTP a servir rotas).
+
+---
+
+## 4. Arquitetura do Projeto
+
+Seguir rigorosamente a separação de processos do Electron. Nunca aceder ao sistema de ficheiros, rede raw ou base de dados directamente do renderer — tudo passa por IPC com um `preload.ts` que expõe uma API tipada e restrita (`contextBridge`).
+
+```
+desktop/
+├── electron/
+│   ├── main.ts                    # ciclo de vida da app, janelas, menus
+│   ├── preload.ts                 # contextBridge — única ponte renderer↔main
+│   ├── ipc/
+│   │   ├── handlers/
+│   │   │   ├── auth.handlers.ts
+│   │   │   ├── athletes.handlers.ts
+│   │   │   ├── attendance.handlers.ts
+│   │   │   ├── payments.handlers.ts
+│   │   │   ├── graduations.handlers.ts
+│   │   │   ├── championships.handlers.ts
+│   │   │   └── sync.handlers.ts
+│   │   └── channels.ts            # enum central de nomes de canais IPC
+│   ├── db/
+│   │   ├── client.ts              # instância SQLite local
+│   │   ├── schema.ts
+│   │   └── migrations/
+│   ├── sync/
+│   │   ├── sync-engine.ts
+│   │   ├── sync-queue.ts
+│   │   └── conflict-resolver.ts
+│   ├── security/
+│   │   ├── token-store.ts         # armazenamento seguro via keytar/safeStorage
+│   │   └── activation.ts          # validação e persistência da chave de activação
+│   ├── updater/
+│   │   └── auto-updater.ts
+│   └── services/
+│       └── api-client.ts          # única camada que fala com o backend NestJS
+│
+└── src/                            # renderer (React)
+    ├── app/
+    │   ├── routes/
+    │   └── providers/
+    ├── pages/
+    │   ├── Activation/
+    │   ├── Login/
+    │   ├── Dashboard/
+    │   ├── Athletes/
+    │   ├── Attendance/
+    │   ├── Graduations/
+    │   ├── Payments/
+    │   ├── Championships/
+    │   ├── Reports/               # visível apenas para CENTRAL / ADMIN_DEV
+    │   └── Settings/
+    ├── components/
+    │   ├── layout/
+    │   │   ├── Sidebar/
+    │   │   ├── Titlebar/          # barra de título customizada
+    │   │   └── SyncStatusBadge/
+    │   ├── athletes/
+    │   ├── attendance/
+    │   ├── payments/
+    │   ├── graduations/
+    │   ├── championships/
+    │   └── ui/                    # shadcn/ui
+    ├── services/
+    │   └── ipc/                   # wrappers tipados sobre window.api.*
+    ├── hooks/
+    ├── stores/                    # Zustand
+    ├── lib/
+    └── constants/
+```
+
+Nunca colocar lógica de negócio no renderer — validação, cálculo de taxa de presença, cálculo de mensalidade em atraso, etc. residem no processo principal ou em serviços partilhados, para que o comportamento seja idêntico online e offline.
+
+---
+
+## 5. Fluxo de Activação (Primeiro Arranque)
+
+1. **Ecrã de Activação** — campo único formatado automaticamente como `XXXX-XXXX-XXXX-XXXX`.
+2. Validação da chave contra o backend (`download-keys` module) — requer internet nesta etapa.
+3. Backend devolve o `academyId` associado e um token de instalação.
+4. A app grava localmente (via `safeStorage` do Electron, nunca em texto simples) o vínculo `academyId` + credenciais da instalação.
+5. Segue-se o **ecrã de Login** normal (utilizador/palavra-passe da academia).
+6. Primeira sincronização completa (`initial pull`) com barra de progresso clara — pode demorar, comunicar isso ao utilizador.
+7. A partir daqui, a app abre directamente no Dashboard em arranques futuros (sessão persistida localmente com refresh automático).
+
+Uma chave só pode ser usada para activar **uma instalação** por academia salvo reemissão explícita pela Central — a UI deve comunicar erros de chave já usada/inválida/expirada de forma clara.
+
+---
+
+## 6. Camada de Segurança (Defense-in-Depth para Desktop)
+
+A app desktop corre em máquinas fora do controlo directo da equipa (computadores das academias afiliadas), com dados de menores de idade e dados financeiros armazenados localmente. Trata-se cada instalação como **hostil por defeito** do ponto de vista da fronteira processo-principal ↔ renderer, e a máquina do utilizador como um ambiente potencialmente comprometido. A segurança organiza-se em camadas independentes — a falha de uma não deve comprometer as restantes.
+
+### 6.1 Modelo de Ameaças
+
+Documentar explicitamente, e desenhar a solução contra, os seguintes vetores:
+
+| Ameaça | Vetor | Mitigação principal |
+|---|---|---|
+| Renderer comprometido (XSS via dado malicioso sincronizado) | Conteúdo de terceiros renderizado sem sanitização | CSP estrita + `contextIsolation` + sanitização de todo o output |
+| Acesso físico ao dispositivo | Portátil roubado/partilhado numa academia | Encriptação em repouso + bloqueio de sessão por inatividade |
+| Adulteração da app instalada | Binário modificado para saltar validação de licença | Assinatura de código + verificação de integridade no arranque |
+| Extração de tokens/credenciais | Ficheiros de configuração em texto plano | Cofre de credenciais do SO (`safeStorage`/`keytar`), nunca ficheiros JSON |
+| Escalonamento via IPC | Renderer a invocar handlers fora do seu papel (ex.: `AFFILIATE_ADMIN` a chamar handler de `CENTRAL`) | Validação de *role* no processo principal em cada handler, nunca só na UI |
+| Man-in-the-middle na sincronização | Rede pública/insegura nas academias | TLS obrigatório + *certificate pinning* no `api-client.ts` |
+| Atualização maliciosa | Servidor de updates comprometido ou *downgrade attack* | Update assinado, verificação de assinatura e versão mínima antes de aplicar |
+| Dados de uma academia visíveis a outra | Erro de filtragem por `academyId` na base local | `academyId` da instalação injectado automaticamente em toda a query, nunca recebido do renderer |
+
+### 6.2 Fronteira de Processos (Electron Hardening)
+
+- `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` em todas as `BrowserWindow`, sem exceção.
+- `preload.ts` expõe apenas um conjunto explícito, mínimo e tipado de funções via `contextBridge.exposeInMainWorld` — nunca `ipcRenderer` diretamente, nunca `require` acessível ao renderer.
+- Cada handler IPC valida o payload recebido com um schema Zod dedicado no processo principal — o renderer é sempre tratado como não confiável, mesmo sendo código da própria equipa.
+- Cada handler IPC valida também a **sessão e o papel (role)** do utilizador autenticado antes de executar qualquer operação — a UI pode esconder botões, mas a autorização real vive sempre no `main`.
+- `webSecurity` nunca desativado; `allowRunningInsecureContent: false`; navegação restrita ao domínio da app (`will-navigate` e `setWindowOpenHandler` a bloquear qualquer URL externa não branqueada).
+- Content-Security-Policy estrita no `index.html` (`default-src 'self'`, sem `unsafe-inline`/`unsafe-eval`); `remote` module confirmado como ausente.
+- `devTools` desativado em builds de produção; se necessário para suporte, apenas via combinação de teclas protegida e apenas em builds de diagnóstico assinadas à parte.
+
+### 6.3 Segredos, Sessão e Identidade
+
+- Tokens de acesso/refresh nunca em `localStorage`/`sessionStorage`/ficheiros de configuração em texto plano — sempre no cofre nativo do SO via `safeStorage` (Windows DPAPI / macOS Keychain / libsecret no Linux) ou `keytar`.
+- Refresh token rotativo, com deteção de reutilização (se um refresh token já usado for reapresentado, revogar toda a sessão e forçar novo login — indício de token roubado).
+- Bloqueio automático de sessão por inatividade configurável (ex.: 15 min), exigindo reintrodução da palavra-passe ou PIN local para retomar — relevante porque o dispositivo é partilhado no tapete/receção da academia.
+- 2FA/OTP suportado no fluxo de login, com fallback claro quando offline (login apenas com sessão local previamente validada, nunca criação de nova sessão sem 2FA quando online).
+- `academyId` da instalação nunca é um parâmetro que o renderer possa alterar — é resolvido uma única vez na activação, gravado de forma protegida no processo principal, e injectado automaticamente em todas as queries locais e remotas.
+
+### 6.4 Dados em Repouso
+
+- Base de dados SQLite local **encriptada** (`SQLCipher` ou equivalente), com chave de encriptação derivada e guardada no cofre do SO — nunca embutida no binário nem gravada em claro ao lado do ficheiro `.db`.
+- Dados de atletas menores de idade e dados financeiros (mensalidades, histórico de pagamentos) sinalizados como categorias sensíveis no schema, para garantir que qualquer export/log/relatório os trata com o mesmo rigor.
+- Ficheiros de log da aplicação nunca contêm tokens, palavras-passe, nem PII completa (mascarar campos sensíveis nos logs locais).
+- Rotina de *secure delete* ao desinstalar ou ao desvincular uma instalação (ex.: chave revogada pela Central), apagando a base local e o conteúdo do cofre de credenciais associado.
+
+### 6.5 Rede e Sincronização
+
+- Todas as chamadas HTTP centralizadas em `api-client.ts` no processo principal — nunca `fetch`/`axios` diretamente do renderer.
+- TLS obrigatório em todas as chamadas; certificate pinning do domínio da API para mitigar MITM em redes públicas.
+- Payloads de sincronização assinados/validados por checksum antes de serem aplicados à base local, para detetar corrupção ou adulteração em trânsito.
+- Rate-limiting local em ações sensíveis (tentativas de login, tentativas de ativação de chave) para mitigar abuso mesmo offline, com *backoff* progressivo.
+- Fila de sincronização com validação de esquema em cada item antes de o marcar como `synced` — nunca aplicar cegamente uma resposta do servidor à base local.
+
+### 6.6 Integridade da Aplicação e Atualizações
+
+- Assinatura de código (`code signing`) obrigatória para todos os instaladores (Windows Authenticode / macOS notarization) — pré-requisito também para reduzir avisos de SmartScreen/Gatekeeper.
+- Auto-update via `electron-updater` apenas por canal HTTPS, com verificação de assinatura e checksum antes de aplicar qualquer atualização; nunca aceitar downgrade de versão sem confirmação explícita.
+- Verificação de integridade do binário instalado no arranque (hash conhecido/assinatura), para detetar adulteração local antes de carregar qualquer dado sensível.
+
+### 6.7 Auditoria e Resposta
+
+- Log de auditoria local de toda ação crítica (login, criação/edição de atleta, registo de pagamento, marcação de presença em massa, alteração de graduação), com utilizador, timestamp e resultado.
+- Logs de auditoria sincronizados com o backend assim que possível, nunca apenas locais — para que a Central mantenha rastreabilidade mesmo de ações feitas offline.
+- Mecanismo de revogação remota: a Central pode marcar uma instalação/chave como revogada, e a próxima sincronização bem-sucedida encerra a sessão localmente e bloqueia novas escritas até reactivação.
+
+---
+
+## 7. Funcionalidades por Ecrã
+
+### Dashboard
+- Visão geral: nº de atletas ativos, presença média do mês, mensalidades em atraso, próximas graduações/campeonatos.
+- Indicador de estado da subscrição da academia.
+- Widget de sincronização com histórico das últimas ações pendentes.
+
+### Atletas
+- Listagem com pesquisa, filtro por faixa, filtro por estado (ativo/inativo).
+- Ficha do atleta: dados pessoais, código de afiliação (`ATA-00412`), histórico de graduações, histórico de presenças, histórico de pagamentos.
+- Registo/edição funciona 100% offline, sincroniza depois.
+
+### Presenças
+- Marcação por aula com suporte a **marcação em massa** (lista de atletas da turma, toggle rápido, atalhos de teclado).
+- Cálculo automático (local) da taxa de presença por atleta.
+- Funciona totalmente offline — é o fluxo mais usado diariamente.
+
+### Graduações
+- Criar evento de graduação, associar atletas, registar avaliações dos instrutores.
+- Progressão automática sugerida com base nas 9 faixas do BJJ + graus, mas decisão final sempre manual/humana.
+
+### Mensalidades
+- Registo de pagamentos (incluindo pagamentos em dinheiro registados offline).
+- Alertas visuais de atraso, com regra de negócio replicada localmente: `PAST_DUE` após vencimento, `SUSPENDED` após 7 dias de graça — mesma lógica do backend, para consistência mesmo offline.
+
+### Campeonatos
+- Inscrição de atletas em campeonatos (sincroniza inscrição quando online, já que pode envolver vagas limitadas geridas centralmente).
+
+### Relatórios (exclusivo Central/Admin Dev)
+- Relatórios agregados de toda a rede — exige ligação, com estado de "última atualização" bem visível quando os dados são cacheados.
+
+### Definições
+- Gestão de conta, tema (claro/escuro, `next-themes` equivalente para Electron), atalhos de teclado, estado da licença/subscrição, botão "Forçar sincronização", logs de sincronização, versão da app e verificação manual de atualizações.
+
+---
+
+## 8. UI/UX para Desktop
+
+- Janela com **barra de título customizada** (`frame: false` + `Titlebar` próprio) para reforçar identidade de produto premium, com controlos nativos de minimizar/maximizar/fechar coerentes com o SO (Windows/macOS).
+- Layout com **sidebar fixa** de navegação + área de conteúdo — padrão de aplicações de produtividade densas, não o padrão "landing page" de scroll vertical.
+- Atalhos de teclado para ações frequentes (nova presença, novo atleta, pesquisa global `Cmd/Ctrl+K`).
+- Estados vazios, de carregamento e de erro tratados explicitamente em cada ecrã — nunca uma tela em branco.
+- Feedback imediato em toda ação local (otimista), com reversão discreta se a sincronização posterior falhar em validação do servidor.
+- Suporte a modo claro e escuro, com persistência da preferência localmente.
+- Tabelas de dados densas mas legíveis (inspiração: Linear, Notion, apps de gestão financeira) — nada do respiro generoso de uma landing page.
+
+---
+
+## 9. Performance
+
+- Processo principal magro — toda a lógica pesada de sincronização em `worker_threads` ou processo utilitário separado, nunca bloqueando a UI thread nem o processo principal.
+- Paginação e virtualização de listas longas (`@tanstack/react-virtual`) para academias com centenas/milhares de atletas.
+- Lazy loading de rotas/páginas no renderer.
+- Índices adequados nas tabelas SQLite locais (por `athleteId`, `academyId`, datas).
+- Arranque frio da app otimizado — mostrar UI com dados locais imediatamente, sincronização acontece depois em background.
+
+---
+
+## 10. Qualidade e Organização do Código
+
+- Nenhum ficheiro gigante — um componente, uma responsabilidade.
+- Tipos partilhados com o backend importados do pacote `packages/shared-types` do monorepo (nunca duplicar DTOs).
+- Camada de IPC totalmente tipada de ponta a ponta (tipos dos handlers do `main` refletidos nos wrappers do `renderer`).
+- Testes: lógica de sincronização e regras de negócio (cálculo de presença, estado de subscrição) devem ter testes unitários dedicados, dado que correm offline e não podem depender do backend para estarem corretas.
+
+---
+
+## Resumo da Missão
+
+Construir a aplicação desktop do ATA-RYU como um produto **standalone e offline-first**, tecnicamente equivalente em rigor de segurança e arquitetura a um software financeiro/de gestão profissional, mantendo total paridade visual com a identidade premium da landing page, mas com uma densidade de informação e velocidade de interação adequadas ao uso diário intensivo por instrutores e administradores de academia — com ou sem internet.

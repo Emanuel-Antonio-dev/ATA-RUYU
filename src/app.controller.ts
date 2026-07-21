@@ -7,10 +7,12 @@ class AppController {
   @PublicRoute()
   healthCheck() {
     return {
+      app_version: process.env.APP_VERSION,
         status: "OK",
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV};
+        environment: process.env.NODE_ENV
+      };
   }
 }
 export { AppController };
