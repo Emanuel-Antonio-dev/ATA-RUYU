@@ -493,17 +493,6 @@ npm run dev
 
 ---
 
-## Variáveis de Ambiente
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/ryu
-JWT_SECRET=o-teu-jwt-secret
-JWT_REFRESH_SECRET=o-teu-refresh-secret
-APP_DOWNLOAD_URL=https://cdn.exemplo.ao/ryu-setup.exe
-```
-
----
-
 ## Licença
 
 Privado — Todos os direitos reservados · Aliança do Tatame Angola · 2026
