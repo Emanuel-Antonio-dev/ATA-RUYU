@@ -57,10 +57,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
           status       = parsed.statusCode;
           responseBody = { message: parsed.message };
         } else {
-          responseBody = { message: exception.message };
+          // ✅ V-12 FIX: antes devolvia `exception.message` directamente ao
+          // cliente — qualquer Error não tratado (incluindo erros do
+          // Prisma, que citam nomes de modelos/campos/argumentos) chegava
+          // ao utilizador em texto, com estado 500. O erro completo fica
+          // no log do servidor; o cliente recebe sempre a mensagem
+          // genérica.
+          console.error('[AllExceptionsFilter] erro não tratado:', exception);
+          responseBody = { message: 'Ocorreu um erro interno no servidor' };
         }
       } catch {
-        responseBody = { message: exception.message };
+        console.error('[AllExceptionsFilter] erro não tratado:', exception);
+        responseBody = { message: 'Ocorreu um erro interno no servidor' };
       }
     }
 

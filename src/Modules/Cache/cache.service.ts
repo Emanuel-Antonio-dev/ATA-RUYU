@@ -50,11 +50,13 @@ async getOrSet<T>(
   factory: () => Promise<T>,
   ttl?: number,
 ): Promise<{ data: T; cached: boolean }> {
-  const cached = this.get<T>(key);
-
-  if (cached) {
+  // ✅ B-15 FIX: `if (cached)` tratava `0`, `""`, `false` e `null` como
+  // "não está em cache" — a factory corria de novo em todo pedido para
+  // qualquer valor falsy legítimo (ex: uma contagem 0, um booleano false).
+  // `has()` verifica a presença da chave, não a veracidade do valor.
+  if (this.cache.has(key)) {
     return {
-      data: cached,
+      data: this.get<T>(key) as T,
       cached: true,
     };
   }

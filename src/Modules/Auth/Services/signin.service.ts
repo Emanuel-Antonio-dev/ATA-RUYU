@@ -41,21 +41,33 @@ class SignInService
             {
                 throw new UnauthorizedException("O registro da sua academia ainda não foi aprovada pela central, por favor aguarde.")
             }
-            let subscription = account.academy.subscription ?? null
-            console.log(subscription)
+            // ✅ B-03 FIX: `account.academy.subscription` era acedido antes
+            // de confirmar que `account.academy` existe — para qualquer
+            // conta ligada a um User (ADMIN_DEV, MASTER, INSTRUCTOR,
+            // ATHLETE), isto lançava TypeError e o login terminava em 500.
+            // O ramo `else if (account.user)`, mais abaixo, nunca era
+            // alcançado.
+            let subscription = account.academy?.subscription ?? null
             if(account.academy && !subscription && account.academy.type != "CENTRAL")
             {
                 subscription = await this.startTrialSubscriptionService.execute(account.academy.id)
             }
 
+            // ✅ V-05 FIX: `sub` deixou de ser ora um Academy.id ora um
+            // User.id (ambíguo, e a origem directa de todas as verificações
+            // de posse que comparavam `credentials.sub` com `academyId` e
+            // falhavam para contas de utilizador). Agora `sub` é sempre o
+            // Account.id, e `academyId` é uma claim própria e explícita —
+            // presente sempre que a conta pertence a uma academia ou a um
+            // utilizador afecto a uma academia (null para ADMIN_DEV).
             let payload
             if(account.academy)
             {
-                payload = {sub: account.academy.id, role: account.academy.type, subscriptionStatus: subscription?.status ?? "TRIALING"}
+                payload = {sub: account.id, academyId: account.academy.id, role: account.academy.type, subscriptionStatus: subscription?.status ?? "TRIALING"}
             }
             else if(account.user)
             {
-                payload = {sub: account.user.id, role: account.user.role}
+                payload = {sub: account.id, academyId: account.user.academyId ?? null, role: account.user.role}
             }
             else
             {
@@ -92,7 +104,7 @@ class SignInService
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
         }
     }

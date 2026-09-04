@@ -40,6 +40,10 @@ interface OtpCodeDatas
 interface RequestWithCredentials extends Request {
   credentials?: {
     sub: string;
+    // ✅ V-05 FIX: `sub` passou a ser sempre o Account.id — o tenant
+    // (Academy.id) viaja agora nesta claim própria e explícita. `null` para
+    // contas ADMIN_DEV, que não pertencem a nenhuma academia.
+    academyId: string | null;
     role: Role
   };
 }

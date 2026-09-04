@@ -41,7 +41,9 @@ class GetCurrentAcademyController {
   })
   async me(@Req() req: RequestWithCredentials)
   {
-    const id  = req.credentials?.sub as string;
+    // ✅ V-05 FIX: `sub` é agora sempre o Account.id — este endpoint
+    // precisa do Academy.id, que viaja na claim `academyId`.
+    const id  = req.credentials?.academyId as string;
     return this.service.execute(id);
   }
 }

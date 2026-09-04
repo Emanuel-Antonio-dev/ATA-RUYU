@@ -52,31 +52,38 @@ export class RegisterSubscriptionPaymentService {
         );
       }
 
+      // ✅ V-03 FIX: este endpoint deixou de marcar o pagamento como PAID
+      // e a subscrição como ACTIVE por si só — isso permitia a uma
+      // afiliada suspensa por falta de pagamento reactivar-se sozinha,
+      // sem qualquer verificação humana ou de gateway. Agora só regista o
+      // pagamento como PENDING (valor por omissão no schema); confirmar o
+      // pagamento (e, com isso, reactivar a subscrição) passa a ser
+      // exclusivo de ConfirmSubscriptionPaymentService, que já só está
+      // acessível a CENTRAL/ADMIN_DEV.
+      // ✅ B-16 FIX: sem a env var definida, `Number(undefined)` é `NaN` e o
+      // Prisma rejeitava a escrita do Decimal com um erro interno confuso.
+      // Falha cedo, com uma mensagem clara, em vez de deixar chegar à BD.
+      const subscriptionAmount = Number(process.env.SUBSCRIPTION_AMOUNT_AOA);
+      const subscriptionCurrency = process.env.SUBSCRIPTION_CURRENCY;
+      if (!process.env.SUBSCRIPTION_AMOUNT_AOA || Number.isNaN(subscriptionAmount)) {
+        console.error('SUBSCRIPTION_AMOUNT_AOA não está definida ou não é um número válido.');
+        throw new InternalServerErrorException('Configuração de subscrição em falta. Contacte o suporte.');
+      }
+      if (!subscriptionCurrency) {
+        console.error('SUBSCRIPTION_CURRENCY não está definida.');
+        throw new InternalServerErrorException('Configuração de subscrição em falta. Contacte o suporte.');
+      }
+
       const payment = await this.paymentRepo.register({
         subscriptionId: dto.subscriptionId,
 
-        amount: Number(
-          process.env.SUBSCRIPTION_AMOUNT_AOA,
-        ),
+        amount: subscriptionAmount,
 
-        currency:
-          process.env.SUBSCRIPTION_CURRENCY!,
+        currency: subscriptionCurrency,
 
         referenceMonth,
         dueDate,
-
-        paidAt: new Date(),
       });
-
-      if (
-        subscription.status ===
-        SubscriptionStatus.PAST_DUE
-      ) {
-        await this.subscriptionRepo.updateStatus(
-          subscription.id,
-          SubscriptionStatus.ACTIVE,
-        );
-      }
 
       return {
         success: true,
@@ -91,7 +98,7 @@ export class RegisterSubscriptionPaymentService {
           currency: payment.currency,
           referenceMonth: payment.referenceMonth.toLocaleString(),
           dueDate: payment.dueDate.toLocaleString(),
-          paidAt: payment.paidAt.toLocaleString(),
+          paidAt: payment.paidAt ? payment.paidAt.toLocaleString() : null,
           createdAt: payment.createdAt,
         },
       };
@@ -100,7 +107,7 @@ export class RegisterSubscriptionPaymentService {
         throw error;
       }
 
-      console.log(error);
+      console.error(error);
 
       throw new InternalServerErrorException(
         "Ocorreu um erro interno, tente novamente.",

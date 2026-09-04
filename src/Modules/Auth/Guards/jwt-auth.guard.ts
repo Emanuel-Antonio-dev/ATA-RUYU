@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException , Inte
 import { Reflector } from "@nestjs/core";
 import { Request } from "express";
 import { IS_PUBLIC_KEY } from "src/Common/Decorators/public.decorator";
-import * as jwt from "jsonwebtoken"
+import { JwtOperations } from "src/Common/Utils/AuthenticationsProcols/JwtOperations/operations";
 
 @Injectable()
 class JwtAuthGuard implements CanActivate
@@ -37,7 +37,10 @@ class JwtAuthGuard implements CanActivate
         }
         try
         {
-            const payload = await jwt.verify(token, process.env.JWT_SECRET as string)
+            // ✅ V-04 FIX: exige explicitamente um token do tipo "access" —
+            // um refresh token (7 dias de validade) ou temp token deixam de
+            // ser aceites como credencial de acesso normal.
+            const payload = JwtOperations.VerifyToken(token, "access")
             request.credentials = payload
             return true
         } catch (error: any)

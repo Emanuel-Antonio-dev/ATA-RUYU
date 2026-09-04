@@ -17,7 +17,7 @@ class ResumeAttendanceService {
 
   async execute(
     date: string,
-    credentials?: { sub: string; role: Role },
+    credentials?: { sub: string; academyId: string | null; role: Role },
   ) {
     try {
       if (!date) throw new BadRequestException("Informe a data da aula.");
@@ -25,11 +25,14 @@ class ResumeAttendanceService {
       const isValidDate = !isNaN(new Date(date).getTime());
       if (!isValidDate) throw new BadRequestException("Data inválida.");
 
-      const result = await this.repository.resumeOfAttendances(new Date(date));
-      // Filtra apenas os atletas da academia do utilizador logado
-      const filtered = result.filter(
-        (attendance: any) => attendance?.academyId === credentials?.sub,
-      );
+      if (!credentials?.academyId) {
+        throw new BadRequestException("Conta sem academia associada.");
+      }
+
+      // ✅ V-01/V-05 FIX: filtro por academia movido para a query (ver
+      // repositório) — deixou de buscar a base inteira e filtrar em
+      // memória com uma comparação (`sub`) que nunca era verdadeira.
+      const filtered = await this.repository.resumeOfAttendances(new Date(date), credentials.academyId);
       if(filtered.length === 0)
       {
         throw new NotFoundException("Sem assiduidades neste dia.")

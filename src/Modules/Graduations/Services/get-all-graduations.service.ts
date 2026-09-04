@@ -17,14 +17,15 @@ class GetAllGraduationsService {
     private readonly repository: IGraduationsRepositories,
   ) {}
 
-  async getAll(academyId: string, credentials?: {sub: string, role: Role}) {
+  async getAll(academyId: string, credentials?: {sub: string, academyId: string | null, role: Role}) {
     try {
         
         if (!academyId)
         {
             throw new BadRequestException('Informe a academia.');
         }
-        if(academyId !== credentials?.sub)
+        // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+        if(academyId !== credentials?.academyId)
         {
             throw new ForbiddenException("Você não pode ver a lista de graduação de outra academia.")
         }

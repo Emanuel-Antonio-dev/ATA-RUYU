@@ -10,7 +10,7 @@ import {
   ApiBearerAuth, ApiConsumes, ApiBody,
 } from '@nestjs/swagger';
 import { UpdateAthleteRequestDto } from '../Dtos/update-thlete.dto';
-import { uploaderOptions } from 'src/Common/Utils/multer-config';
+import { getUploaderOptions } from 'src/Common/Utils/multer-config';
 import { EditAtheleteService } from '../Services/edit-athelete-datas.service';
 import { Roles } from 'src/Common/Decorators/roles.decorator';
 import { Role } from 'src/Modules/Auth/Guards/roles.enum';
@@ -25,7 +25,7 @@ class EditAthleteController {
 
   @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('AthletePhotos', uploaderOptions))
+  @UseInterceptors(FileInterceptor('AthletePhotos', getUploaderOptions('AthletePhotos')))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Actualizar dados do atleta' })
   @ApiBody({

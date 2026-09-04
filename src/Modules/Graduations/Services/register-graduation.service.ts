@@ -19,7 +19,7 @@ class RegisterGraduationService
         private readonly academyRepository: IAcademiesRepositories,
         private readonly prisma: PrismaService
     ){}
-    async register(datas: RegisterGraduationDtoRequest, credentials?:{sub: string, role: Role})
+    async register(datas: RegisterGraduationDtoRequest, credentials?:{sub: string, academyId: string | null, role: Role})
     {
         try
         {
@@ -29,7 +29,8 @@ class RegisterGraduationService
                 throw new NotFoundException("Atleta não encontrado(a)")
             }
 
-            if(credentials?.sub !== existsAthele.academy.id)
+            // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+            if(credentials?.academyId !== existsAthele.academy.id)
             {
                 throw new ForbiddenException("Você não tem permissão para graduar um atleta de outra academia")
             }
@@ -107,7 +108,7 @@ class RegisterGraduationService
                 {
                     throw error
                 }
-                console.log(error)
+                console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente")
         }
     }

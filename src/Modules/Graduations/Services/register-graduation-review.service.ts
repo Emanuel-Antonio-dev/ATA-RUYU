@@ -16,7 +16,7 @@ class RegisterGraduationReviewService
         @Inject(IAtheleRepositories)
         private readonly atheleRepository: IAtheleRepositories,
     ){}
-    async register(datas: RegisterGraduationReviewDto, credentials?:{sub: string, role: Role})
+    async register(datas: RegisterGraduationReviewDto, credentials?:{sub: string, academyId: string | null, role: Role})
     {
         try
         {
@@ -25,7 +25,8 @@ class RegisterGraduationReviewService
             {
                 throw new NotFoundException("Atleta não encontrado(a)")
             }
-            if(credentials?.sub !== existsAthele.academy.id)
+            // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+            if(credentials?.academyId !== existsAthele.academy.id)
             {
                 throw new ForbiddenException("Você não tem permissão para avaliar a gradução de um(a) atleta de outra academia")
             }

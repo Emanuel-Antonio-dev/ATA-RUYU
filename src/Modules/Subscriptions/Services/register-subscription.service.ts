@@ -12,7 +12,7 @@ export class RegisterSubscriptionService {
     private readonly academiRepository: IAcademiesRepositories
   ) {}
 
-  async execute(academyId: string, credentials?: {sub: string, role: Role})
+  async execute(academyId: string, credentials?: {sub: string, academyId: string | null, role: Role})
   {
     try {
       const existsAcademy = await this.academiRepository.findAcademyById({action:"OnlyBasicsDatas"}, academyId)
@@ -26,7 +26,10 @@ export class RegisterSubscriptionService {
         throw new ConflictException('Esta academia já possui uma subscrição activa.');
       }
 
-      if(credentials?.sub !== academyId)
+      // ✅ V-05 FIX: comparar contra `academyId` (não `sub`) + bypass para
+      // CENTRAL, que precisa de poder criar a subscrição de uma afiliada
+      // recém-aprovada.
+      if(credentials?.academyId !== academyId && credentials?.role !== Role.CENTRAL)
       {
         throw new UnauthorizedException("Você não tem permissão para ativar a subscrição de outra academia.")
       }
@@ -56,7 +59,7 @@ export class RegisterSubscriptionService {
     } catch (error)
     {
       if (error instanceof HttpException) throw error;
-      console.log(error);
+      console.error(error);
       throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
     }
   }

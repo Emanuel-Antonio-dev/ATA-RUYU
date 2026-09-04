@@ -15,17 +15,28 @@ class DeleteAcademyService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async delete(id: string,credentials?: { sub: string; role: Role },)
+  async delete(id: string,credentials?: { sub: string; academyId: string | null; role: Role },)
   {
     try {
         if(!id) throw new NotFoundException("ID da academia não informado.");
         const academy = await this.repository.findAcademyById({ action: "AllDatas" }, id);
         if (!academy) throw new NotFoundException("Academia não encontrada.");
-        if(credentials?.sub !== id)
+        // ✅ V-05 FIX: `credentials.sub` é agora sempre o Account.id, nunca
+        // o Academy.id — a comparação teria de falhar sempre. Comparamos
+        // contra `academyId`, e adicionamos o bypass explícito para
+        // CENTRAL que a auditoria identificou como estando em falta (a
+        // Central deve poder gerir/remover afiliadas, não só a si própria).
+        const isOwner = credentials?.academyId === id;
+        const isCentral = credentials?.role === Role.CENTRAL;
+        if(!isOwner && !isCentral)
         {
             throw new ForbiddenException("Não tens permissão para remover esta academia.");
         }
-        if(credentials?.role === Role.CENTRAL)
+        // a conta da própria Central nunca pode ser apagada por esta via
+        // (verifica o tipo da academia ALVO, não o papel de quem pede —
+        // antes bloqueava sempre que quem pedia era CENTRAL, impedindo-a
+        // de remover qualquer afiliada)
+        if(academy.type === "CENTRAL")
         {
             throw new ForbiddenException("Você não pode eliminar a conta da Central.");
         }
@@ -44,7 +55,7 @@ class DeleteAcademyService {
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
     }
   }

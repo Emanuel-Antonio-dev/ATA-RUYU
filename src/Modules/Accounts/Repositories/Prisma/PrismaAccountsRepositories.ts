@@ -12,7 +12,6 @@ class PrismaAccountsRepositories implements IAccountsRepositories
 
     async registerAccount(datas: AccountDto, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<AccountDto | any>
     {
-        console.log(datas)
         const client = tx ?? this.prisma
         return await client.account.create({
             data:{
@@ -40,9 +39,15 @@ class PrismaAccountsRepositories implements IAccountsRepositories
         return await this.prisma.account.update({where:{email: email}, data:{isActive: false}})    
     }
     async editAccountDatas(id_account: string, datas: Partial<AccountDto>): Promise<AccountDto | any> {
+        // ✅ B-02 FIX: o `...datas` espalhava as chaves do DTO (`password`,
+        // `phone_number`) directamente no `data` do Prisma — nenhuma delas
+        // existe no modelo `Account` (que usa `passwordHash` e `phone`).
+        // O Prisma rejeitava com "Unknown argument", e ninguém conseguia
+        // repor a senha. Agora mapeia explicitamente cada campo suportado.
         return await this.prisma.account.update({where:{id: id_account}, data:{
-            ...datas,
-            passwordHash: datas.password
+            ...(datas.email && { email: datas.email }),
+            ...(datas.phone_number && { phone: datas.phone_number }),
+            ...(datas.password && { passwordHash: datas.password }),
         }})
     }
 }

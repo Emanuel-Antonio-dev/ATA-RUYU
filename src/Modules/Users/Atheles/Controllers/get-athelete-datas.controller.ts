@@ -24,7 +24,7 @@ class GetAthleteController {
   @ApiOperation({ summary: 'Listar atletas com filtros opcionais' })
   @ApiQuery({ name: 'page',          type: Number, required: false })
   @ApiQuery({ name: 'limit',         type: Number, required: false })
-  @ApiQuery({ name: 'academyId',     type: String, required: false })
+  @ApiQuery({ name: 'academyId',     type: String, required: false, description: 'Apenas CENTRAL pode escolher; ignorado para outros papéis.' })
   @ApiQuery({ name: 'affiliateCode', type: String, required: false })
   @ApiResponse({ status: 200, description: 'Lista paginada de atletas' })
   async findAll(
@@ -32,13 +32,16 @@ class GetAthleteController {
     @Query('limit')         limit?:         string,
     @Query('academyId')     academyId?:     string,
     @Query('affiliateCode') affiliateCode?: string,
+    @Req() req?: RequestWithCredentials,
   ) {
     return this.getAllService.execute({
       page:          page  ? Number(page)  : 1,
-      limit:         limit ? Number(limit) : 20,
+      // ✅ V-01/5.10 FIX: limite máximo de 100 — sem isto, `?limit=999999`
+      // força uma única query a devolver a tabela inteira.
+      limit:         limit ? Math.min(Number(limit), 100) : 20,
       academyId:     academyId     || undefined,
       affiliateCode: affiliateCode || undefined,
-    });
+    }, req?.credentials);
   }
 
   // ✅ Rota por código de afiliação com prefixo claro

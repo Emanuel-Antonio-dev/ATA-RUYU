@@ -72,7 +72,7 @@ class ValidateOtpCodeService
                 {
                     throw error
                 }    
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
         }
     }

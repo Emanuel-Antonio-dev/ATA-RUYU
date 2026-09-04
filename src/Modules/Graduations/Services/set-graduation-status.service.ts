@@ -27,7 +27,7 @@ class SetGraduationStatusService {
     private readonly athleteRepository: IAtheleRepositories
   ) {}
 
-  async set(athleteId: string, status:"APPROVED" | "NOT_APPROVED",credentials?: {sub: string, role: Role}) {
+  async set(athleteId: string, status:"APPROVED" | "NOT_APPROVED",credentials?: {sub: string, academyId: string | null, role: Role}) {
     try {
           const { action, past } = STATUS_LABELS[status];
           if (!athleteId)
@@ -40,21 +40,23 @@ class SetGraduationStatusService {
               throw new NotFoundException('Atleta não econtrado(a)');
             }
 
-            if(existsAthlete.academy.id !== credentials?.sub)
+            // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+            if(existsAthlete.academy.id !== credentials?.academyId)
             {
               throw new ForbiddenException(`Você não tem permissão para ${action} a graduação de um(a) atleta de outra academia.`)
             }
             const pendingGraduation = existsAthlete.graduations.find(g => g.status === 'PENDING');
-            console.log(existsAthlete.graduations)
             if (!pendingGraduation)
             {
               throw new NotFoundException('Este(a) atleta não possui nenhuma graduação pendente.');
             }
-            if(existsAthlete.graduations[0].status === "APPROVED" || existsAthlete.graduations[0].status === "NOT_APPROVED")
-            {
-              throw new BadRequestException(`A graduação deste(a) atleta já foi ${past}`)
-            }
-            const result = await this.repository.setGraduationStatus(existsAthlete.graduations[0].id,athleteId, status);
+            // ✅ FIX: verificava `graduations[0].status` (posição
+            // arbitrária no array, podia ser uma graduação antiga já
+            // decidida) em vez de `pendingGraduation` (a que acabou de ser
+            // encontrada e confirmada como PENDING) — podia bloquear a
+            // decisão de uma graduação pendente real, ou nunca bloquear
+            // uma reprocessada, consoante a ordem devolvida pelo repositório.
+            const result = await this.repository.setGraduationStatus(pendingGraduation.id,athleteId, status);
             if (!result)
             {
               throw new InternalServerErrorException(`Ocorreu um erro ao ${action} a graduação, tente novamente`);
@@ -63,10 +65,10 @@ class SetGraduationStatusService {
             return { success: true, statusCode: 200, message:`Graduação ${past} com sucesso` };
           } catch (error: any) {
             if (error instanceof HttpException) {
-              console.log(error)
+              console.error(error)
               throw error;
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
           }
         }

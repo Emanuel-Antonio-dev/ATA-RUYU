@@ -39,7 +39,9 @@ class GetAllGraduationsController {
   @ApiResponse({ status: 500, description: 'Erro interno ao listar graduações.' })
   async getAll(@Req() req: RequestWithCredentials) {
     const credentials = req?.credentials;
-    return this.getAllGraduationsService.getAll(credentials?.sub!, credentials);
+    // ✅ V-05 FIX: `sub` é agora sempre o Account.id — este endpoint precisa
+    // do tenant (Academy.id), que viaja na claim `academyId`.
+    return this.getAllGraduationsService.getAll(credentials?.academyId!, credentials);
   }
 }
 

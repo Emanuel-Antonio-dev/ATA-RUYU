@@ -19,7 +19,7 @@ class MarkAttendanceService
         private readonly prisma: PrismaService
     ){}
 
-    async markAttendance(datas: MarkAttendanceDto, credentials?: {sub: string, role: Role})
+    async markAttendance(datas: MarkAttendanceDto, credentials?: {sub: string, academyId: string | null, role: Role})
     {
         try
         {
@@ -33,7 +33,8 @@ class MarkAttendanceService
             {
                 throw new ConflictException(`O(A) atleta ${existsAthele.fullName} atleta já foi marcado(a) como ${alreadyPresent.present ? "presente":"ausente"} neste dia.`)
             }
-            if(credentials?.sub !== existsAthele.academy.id)
+            // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+            if(credentials?.academyId !== existsAthele.academy.id)
             {
                 throw new UnauthorizedException("Você não tem permissão para marcar a presença de um atleta de outra academia")
             }
@@ -55,7 +56,7 @@ class MarkAttendanceService
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
         }
     }

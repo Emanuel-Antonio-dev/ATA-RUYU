@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RegisterAcademyService } from '../Services/register-academy.service';
 import { CreateAcademyRequestDto } from '../Dtos/create-academy.dto';
-import { uploaderOptions} from 'src/Common/Utils/multer-config';
+import { getUploaderOptions } from 'src/Common/Utils/multer-config';
 import { PublicRoute } from 'src/Common/Decorators/public.decorator';
 
 @ApiTags('Academies')
@@ -13,7 +13,7 @@ export class RegisterAcademyController {
 
   @PublicRoute()  
   @Post()
-  @UseInterceptors(FileInterceptor('AcademyLogos', uploaderOptions)) // 👈 passa as opções do teu multer
+  @UseInterceptors(FileInterceptor('AcademyLogos', getUploaderOptions('AcademyLogos'))) // 👈 passa as opções do teu multer
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Registrar uma nova academia',

@@ -23,7 +23,7 @@ export class ListOverduePaymentsService {
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      console.log(error);
+      console.error(error);
       throw new InternalServerErrorException('Ocorreu um erro interno, tente novamente.');
     }
   }

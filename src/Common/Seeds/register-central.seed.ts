@@ -20,7 +20,7 @@ async function seedCentralAccount() {
     return;
   }
 
-  const passwordHash = await bcrypt.hash(process.env.CENTRAL_ADMIN_PASSWORD!, 10);
+  const passwordHash = await bcrypt.hash(process.env.CENTRAL_ADMIN_PASSWORD!, 12); // ✅ 5.12 FIX: custo padronizado para 12
 
   await prisma.$transaction(async (tx) => {
     // 1. Cria a conta

@@ -22,13 +22,16 @@ class EditAcademyService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async edit(id: string, datas: UpdateAcademyRequestDto, file?: Express.Multer.File,credentials?: { sub: string; role: Role },
+  async edit(id: string, datas: UpdateAcademyRequestDto, file?: Express.Multer.File,credentials?: { sub: string; academyId: string | null; role: Role },
 ) {
     try {
       if (!id) throw new BadRequestException("ID da academia não informado.");
       const academy = await this.repository.findAcademyById({ action: "OnlyBasicsDatas" }, id);
       if (!academy) throw new NotFoundException("Academia não encontrada.");
-      if (credentials?.sub !== id)
+      // ✅ V-05 FIX: comparar contra `academyId` (não `sub`, que agora é
+      // sempre o Account.id) + bypass explícito para CENTRAL, que deve
+      // conseguir editar qualquer afiliada, não só a si própria.
+      if (credentials?.academyId !== id && credentials?.role !== Role.CENTRAL)
         {
           throw new ForbiddenException("Não tens permissão para editar esta academia.");
         }
@@ -41,7 +44,10 @@ class EditAcademyService {
         const datasToUpdate: UpdateAcademyRequestDto={}
         if(datas.name)
         {
-          const alreadyExistsName = await this.prisma.academy.findFirst({where:{name: datas.name}})
+          // ✅ B-10 FIX: exclui o próprio registo — sem isto, submeter o
+          // formulário sem alterar o nome encontrava a própria academia e
+          // rejeitava com 409 sempre.
+          const alreadyExistsName = await this.prisma.academy.findFirst({where:{name: datas.name, id: {not: id}}})
           if(alreadyExistsName)
           {
             throw new ConflictException("Este nome já está sendo usado")
@@ -58,7 +64,7 @@ class EditAcademyService {
         }
         if(datas.email)
         {
-          const alreadyExistsEmail = await this.prisma.account.findFirst({where:{email: datas.email}})
+          const alreadyExistsEmail = await this.prisma.account.findFirst({where:{email: datas.email, id: {not: academy.account.id}}})
           if(alreadyExistsEmail)
           {
             throw new ConflictException("Este email já está sendo usado")
@@ -67,7 +73,7 @@ class EditAcademyService {
         }
         if(datas.phone)
         {
-          const alreadyExistsPhoneNumber = await this.prisma.account.findFirst({where:{phone: datas.phone}})
+          const alreadyExistsPhoneNumber = await this.prisma.account.findFirst({where:{phone: datas.phone, id: {not: academy.account.id}}})
           if(alreadyExistsPhoneNumber)
           {
             throw new ConflictException("Este contacto telefonico já está sendo usado")
@@ -91,7 +97,7 @@ class EditAcademyService {
             {
               throw new BadRequestException("A sua senha atual está incorrecta")
             }
-            const passwordHashed = await bcrypt.hash(datas.newPassword, 10)
+            const passwordHashed = await bcrypt.hash(datas.newPassword, 12) // ✅ 5.12 FIX: custo padronizado para 12 (era 10 aqui, inconsistente com o resto)
             datasToUpdate.newPassword = passwordHashed
         }
         

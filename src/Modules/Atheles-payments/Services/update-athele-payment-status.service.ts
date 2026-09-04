@@ -13,7 +13,7 @@ class UpdateAthelePaymentService
     private readonly prisma: PrismaService
 ){}
 
-    async updateStatus(id: string,datas: UpdatePaymentRequestBody, credentials?: {sub: string, role: Role})
+    async updateStatus(id: string,datas: UpdatePaymentRequestBody, credentials?: {sub: string, academyId: string | null, role: Role})
     {
         try
         {
@@ -26,7 +26,8 @@ class UpdateAthelePaymentService
             {
                 throw new NotFoundException("Pagamento não encontrado.")
             }
-            if(credentials?.sub !== existsPayment.athlete.academyId)
+            // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+            if(credentials?.academyId !== existsPayment.athlete.academyId)
             {
                 throw new BadRequestException("Você não tem permissão para atualizar o status do pagamento de um(a) atleta de outra academia.")
             }
@@ -50,7 +51,7 @@ class UpdateAthelePaymentService
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
         }
     }

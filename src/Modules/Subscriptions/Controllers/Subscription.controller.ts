@@ -48,7 +48,11 @@ import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
     // ─────────────────────────────────────────────────────────────
     // REGISTER PAYMENT
     // ─────────────────────────────────────────────────────────────
-    @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
+    // ✅ V-03 FIX: era permitido a AFFILIATE/AFFILIATE_ADMIN — uma
+    // afiliada conseguia auto-declarar-se paga. Passa a ser exclusivo de
+    // quem confirma pagamentos (CENTRAL/ADMIN_DEV); o registo agora só
+    // cria um pagamento PENDING (ver register-payment.service.ts).
+    @Roles(Role.CENTRAL, Role.ADMIN_DEV)
     @Post('payments')
     @ApiOperation({ summary: 'Registar pagamento de subscrição' })
     @ApiBody({ type: RegisterSubscriptionPaymentDto })
@@ -92,14 +96,19 @@ import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
     @ApiOperation({ summary: 'Cancelar subscrição' })
     @ApiParam({ name: 'subscriptionId', example: 'sub_123' })
     @ApiResponse({ status: 200, description: 'Subscrição cancelada' })
-    async cancel(@Param('subscriptionId') subscriptionId: string) {
-      return this.cancelSubscriptionService.execute(subscriptionId);
+    async cancel(@Param('subscriptionId') subscriptionId: string, @Req() req: RequestWithCredentials) {
+      // ✅ V-03 FIX: passa a validar posse dentro do service — antes
+      // qualquer afiliada cancelava a subscrição de outra academia.
+      return this.cancelSubscriptionService.execute(subscriptionId, req.credentials);
     }
   
     // ─────────────────────────────────────────────────────────────
     // RENEW SUBSCRIPTION
     // ─────────────────────────────────────────────────────────────
-    @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN, Role.ADMIN_DEV)
+    // ✅ V-03 FIX: era permitido a AFFILIATE/AFFILIATE_ADMIN chamar em
+    // ciclo, renovando a subscrição indefinidamente sem cobrar nada.
+    // Passa a ser exclusivo de quem gere pagamentos (CENTRAL/ADMIN_DEV).
+    @Roles(Role.CENTRAL, Role.ADMIN_DEV)
     @Patch(':subscriptionId/renew')
     @ApiOperation({ summary: 'Renovar subscrição' })
     @ApiParam({ name: 'subscriptionId', example: 'sub_123' })

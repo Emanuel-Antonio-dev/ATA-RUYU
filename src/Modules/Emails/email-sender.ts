@@ -17,9 +17,14 @@ class EmailProvider implements IEmailProvider
                 user: String(process.env.SMTP_USER),
                 pass: String(process.env.SMTP_PASSWORD)
             },
-            tls: {
-                rejectUnauthorized: false,
-            }
+            // ✅ V-07 FIX: `rejectUnauthorized: false` aceitava qualquer
+            // certificado TLS, incluindo auto-assinado — um atacante em
+            // posição de rede conseguia interceptar a ligação SMTP e ler
+            // os emails de recuperação de senha (token em claro), o que
+            // transforma um MITM passivo em tomada de conta completa. Se
+            // um servidor interno precisar de um certificado próprio, o CA
+            // deve ser fornecido via `tls.ca`, nunca desligando a
+            // verificação.
         })
     }
     async sendEmail(message: IMessage): Promise<void> {
@@ -28,9 +33,13 @@ class EmailProvider implements IEmailProvider
                 name: message.to.name,
                 address: message.to.email
             },
+            // ✅ FIX: usava `message.to` também como remetente — todo email
+            // enviado pelo sistema aparecia como enviado pelo próprio
+            // destinatário, para si mesmo. `IMessage.from` já existe na
+            // interface mas nunca era usado.
             from:{
-                name: message.to.name,
-                address: message.to.email
+                name: message.from?.name ?? String(process.env.SMTP_FROM_NAME ?? "Aliança do Tatame"),
+                address: message.from?.email ?? String(process.env.SMTP_USER)
             },
             subject: message.subject,
             html: message.body

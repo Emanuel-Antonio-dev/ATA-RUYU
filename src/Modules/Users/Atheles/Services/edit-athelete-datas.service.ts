@@ -11,7 +11,7 @@ import { PrismaService } from "src/lib/prisma.service";
 import sanitize from "sanitize-html";
 import { Role } from "src/Modules/Auth/Guards/roles.enum";
 import { UpdateAthleteDto, UpdateAthleteRequestDto } from "../Dtos/update-thlete.dto";
-import { BeltColor } from "generated/prisma/enums";
+import { BeltColor, BeltDegree, DocumentType } from "generated/prisma/enums";
 
 @Injectable()
 class EditAtheleteService {
@@ -24,7 +24,7 @@ class EditAtheleteService {
   id: string,
   datas: UpdateAthleteRequestDto,
   file?: Express.Multer.File,
-  credentials?: { sub: string; role: Role},
+  credentials?: { sub: string; academyId: string | null; role: Role},
 ) {
   try {
     if (!id) throw new BadRequestException("ID do atleta não informado.");
@@ -32,8 +32,9 @@ class EditAtheleteService {
     const athlete = await this.repository.getAthleteDatas(id);
     if (!athlete) throw new NotFoundException("Atleta não encontrado/a.");
 
-    // Verifica se pertence à academia do utilizador logado
-    if (credentials?.sub !== athlete.academy.id) {
+    // ✅ V-05 FIX: comparar contra `academyId` (não `sub`, que agora é
+    // sempre o Account.id) + bypass para CENTRAL
+    if (credentials?.academyId !== athlete.academy.id && credentials?.role !== Role.CENTRAL) {
       throw new ForbiddenException("Você não tem permissão para editar os dados do(a) atleta de uma outra academia.");
     }
 
@@ -51,7 +52,11 @@ class EditAtheleteService {
         if (datas.isActive !== undefined) datasToUpdate.isActive = datas.isActive;
         if (datas.documentNumber)
         {
-          const alreadyExistsDocumentNumber = await this.prisma.athlete.findFirst({where:{documentNumber: datas.documentNumber}})
+          // ✅ B-10 FIX: exclui o próprio registo da verificação de
+          // unicidade — sem o `id: {not: id}`, submeter o formulário sem
+          // alterar o documento encontrava o próprio atleta e rejeitava
+          // com 400 sempre.
+          const alreadyExistsDocumentNumber = await this.prisma.athlete.findFirst({where:{documentNumber: datas.documentNumber, id: {not: id}}})
           if(alreadyExistsDocumentNumber)
           {
             throw new BadRequestException("Já existe um atleta registrado com este número de documento.")
@@ -68,7 +73,10 @@ class EditAtheleteService {
         }
         if (datas.currentDegree)
           {
-            if(!Object.values(DocumentType).includes(datas.currentDegree))
+            // ✅ B-04 FIX: validava contra o enum errado (DocumentType em
+            // vez de BeltDegree) — a condição era sempre verdadeira, e
+            // nenhuma actualização de grau de faixa era possível.
+            if(!Object.values(BeltDegree).includes(datas.currentDegree))
               {
                 throw new BadRequestException("Número de divisas inválido.");
               }
@@ -83,14 +91,14 @@ class EditAtheleteService {
         }
         const photoUrl = file ? `/uploads/AthletePhotos/${file.filename}`: datas.photoUrl ?? undefined;
         if (photoUrl) datasToUpdate.photoUrl = photoUrl;
-        if(datas.academyId)
+        // ✅ B-11 FIX: transferir um atleta para outra academia deixou de
+        // ser possível através deste endpoint — uma afiliada podia mover os
+        // seus próprios atletas para o cadastro de outra academia sem
+        // qualquer aprovação. Transferências devem passar por um fluxo
+        // dedicado, aprovado pela CENTRAL (fora do âmbito desta correcção).
+        if (datas.academyId && datas.academyId !== athlete.academy.id)
         {
-          const existsAcademy = await this.prisma.academy.findFirst({where:{id: datas.academyId}})
-          if(!existsAcademy)
-          {
-            throw new NotFoundException("A academia selecionada não foi enonctrada.")
-          }
-          datasToUpdate.academyId = datas.academyId
+          throw new ForbiddenException("Não é possível transferir um atleta para outra academia por esta via. Contacte a Central.")
         }
         if (Object.keys(datasToUpdate).length === 0) {
           throw new BadRequestException("Nenhum campo para actualizar foi informado.");

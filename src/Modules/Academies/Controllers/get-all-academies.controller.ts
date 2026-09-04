@@ -7,13 +7,20 @@ import {
 } from '@nestjs/swagger';
 import { AcademyStatus, AcademyType } from 'generated/prisma/client';
 import { GetAllAcademiesService } from '../Services/get-all-academies.service';
-import { PublicRoute } from 'src/Common/Decorators/public.decorator';
 
 @ApiTags('Academies')
+@ApiBearerAuth("accessToken")
 @Controller('academies')
 class GetAllAcademiesController {
   constructor(private readonly service: GetAllAcademiesService) {}
-  @PublicRoute()
+  // ✅ V-01 FIX: `@PublicRoute()` removido — este endpoint devolvia, sem
+  // qualquer autenticação, o cadastro completo de todas as academias E de
+  // todos os atletas da rede (incluindo telefone de emergência, histórico
+  // de pagamentos, presenças e graduações — ver AUDITORIA.md). Um `curl`
+  // sem token, com `?limit=999999`, extraía a base de dados inteira.
+  // Continua acessível a qualquer conta autenticada (sem @Roles) — a
+  // projecção devolvida agora é mínima (ver repositório), sem dados
+  // sensíveis nem a colecção de atletas.
   @Get()
   @ApiOperation({ summary: 'Listar todas as academias com paginação' })
   @ApiQuery({ name: 'status', enum: AcademyStatus,          required: false, example: AcademyStatus.ACTIVE })
@@ -32,7 +39,9 @@ class GetAllAcademiesController {
       status,
       type,
       page:  page  ? Number(page)  : 1,
-      limit: limit ? Number(limit) : 20,
+      // ✅ V-01 FIX: tecto de 100 — antes `?limit=999999` era aceite sem
+      // qualquer limite.
+      limit: limit ? Math.min(Number(limit), 100) : 20,
     });
   }
 }

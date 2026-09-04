@@ -2,7 +2,7 @@ import { Controller, Post, Body, UseInterceptors, UploadedFile, Req } from '@nes
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateAthleteDto } from '../Dtos/create-athlete.dto';
-import { uploaderOptions} from 'src/Common/Utils/multer-config';
+import { getUploaderOptions } from 'src/Common/Utils/multer-config';
 import { RegisterAthletesService } from '../Services/register-athletes.service';
 import { PublicRoute } from 'src/Common/Decorators/public.decorator';
 import { Role } from '../../../Auth/Guards/roles.enum';
@@ -18,7 +18,7 @@ export class RegisterAthletesController {
 
   @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
   @Post()
-  @UseInterceptors(FileInterceptor('AthletePhotos', uploaderOptions)) // 👈 passa as opções do teu multer
+  @UseInterceptors(FileInterceptor('AthletePhotos', getUploaderOptions('AthletePhotos'))) // 👈 passa as opções do teu multer
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Registrar um novo athlete',

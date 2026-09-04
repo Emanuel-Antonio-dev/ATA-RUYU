@@ -16,7 +16,7 @@ class RegisterAthletePaymentsService
         private readonly paymentsRepositories:IAthelePaymentsRepositories,
         private readonly prisma: PrismaService
     ){}
-    async register(datas: CreatePaymentDto, credentials?:{sub: string, role: Role}): Promise<any>
+    async register(datas: CreatePaymentDto, credentials?:{sub: string, academyId: string | null, role: Role}): Promise<any>
     {
         try
         {
@@ -25,7 +25,8 @@ class RegisterAthletePaymentsService
         {
             throw new BadRequestException("Atleta não encontrado(a).")
         }
-        if(existsAthele.academy.id !== credentials?.sub)
+        // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+        if(existsAthele.academy.id !== credentials?.academyId)
         {
             throw new UnauthorizedException("Você não tem permissão para registrar o pagamento de um(a) atleta de outra academia")
         }
@@ -61,7 +62,7 @@ class RegisterAthletePaymentsService
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
         }
     }

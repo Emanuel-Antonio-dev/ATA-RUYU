@@ -21,7 +21,7 @@ class GetAllAthletePaymentsService {
 
   async execute(
     filters: { page: number; limit: number,academyId:string},
-    credentials?: { sub: string; role: Role },
+    credentials?: { sub: string; academyId: string | null; role: Role },
   ) {
     try {
 
@@ -30,14 +30,16 @@ class GetAllAthletePaymentsService {
             {
               throw new NotFoundException("Academia não encontrada.")
             }
-            if(existsAcademy.id !== credentials?.sub)
+            // ✅ V-05 FIX: comparar contra `academyId` (não `sub`, que agora
+            // é sempre o Account.id)
+            if(existsAcademy.id !== credentials?.academyId)
             {
               throw new UnauthorizedException("Você não tem permissão para acessar a lista de pagamentos de outras academias.")
             }
             const result = await this.paymentsRepository.getAllAthelePayments({
                 page:  filters.page,
                 limit: filters.limit,
-                academyId: credentials?.sub!
+                academyId: credentials?.academyId!
             });
             if(!result)
             {

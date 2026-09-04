@@ -40,20 +40,20 @@ export class ValidateDownloadKeyService {
       }
 
       /**
-       * 🔥 UPDATE ATÓMICO (ESSENCIAL)
-       * Isso deve garantir que apenas 1 request consegue usar a chave
+       * ✅ B-06 FIX: era um read-then-write sem condição no WHERE — dois
+       * pedidos concorrentes passavam ambos na verificação de status
+       * acima antes de qualquer escrita, e ambos recebiam "Download
+       * liberado!". A chave de activação (mecanismo de licenciamento da
+       * app desktop, de uso único por desenho — ver documento de visão)
+       * podia ser usada N vezes com um simples pedido paralelo. Agora o
+       * status ACTIVE faz parte da condição da própria escrita: só UM
+       * pedido consegue `count === 1`; qualquer outro concorrente recebe
+       * `count === 0`, mesmo que ambos tenham passado na leitura acima.
        */
-      const updated = await this.repository.updateDownloadKey(
-        downloadKey.id,
-        {
-          usedByIp: ip,
-          usedAt: new Date(),
-          status: "USED",
-        }
-      );
+      const { count } = await this.repository.markKeyAsUsedAtomic(downloadKey.id, ip);
 
-      if (!updated) {
-        throw new ForbiddenException("Ocorreu um erro ao liberar o download, tente novamente.");
+      if (count === 0) {
+        throw new ForbiddenException("Esta chave já foi utilizada.");
       }
 
       return {
@@ -64,7 +64,7 @@ export class ValidateDownloadKeyService {
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      console.log(error)
+      console.error(error)
       throw new InternalServerErrorException(
         "Ocorreu um erro interno ao validar a chave."
       );

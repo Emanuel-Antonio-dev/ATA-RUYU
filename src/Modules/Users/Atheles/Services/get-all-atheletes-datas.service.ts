@@ -17,12 +17,25 @@ class GetAllAthletesService {
 
   async execute(
     filters: { page: number; limit: number,academyId?:string;affiliateCode?: string;},
-    credentials?: { sub: string; role: Role; academyId: string },
+    credentials?: { sub: string; role: Role; academyId: string | null },
   ) {
     try {
+      // ✅ V-02 FIX: esta lista devolvia TODOS os atletas da plataforma,
+      // para qualquer conta autenticada — `academyId`/`affiliateCode` eram
+      // recebidos mas nunca chegavam a ser passados ao repositório, e não
+      // havia nenhuma derivação a partir do token. Agora: a CENTRAL pode
+      // escolher a academia (ou ver todas, omitindo o parâmetro); qualquer
+      // outro papel fica sempre preso à sua própria academia, ignorando o
+      // que vier na query.
+      const scopeAcademyId = credentials?.role === Role.CENTRAL
+        ? (filters.academyId ?? undefined)
+        : (credentials?.academyId ?? undefined);
+
       const result = await this.repository.getAllAtheles({
         page:  filters.page,
         limit: filters.limit,
+        academyId: scopeAcademyId,
+        affiliateCode: filters.affiliateCode,
       });
       if(result.data.length === 0)
       {

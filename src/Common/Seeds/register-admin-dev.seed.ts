@@ -19,7 +19,7 @@ async function seedAdmin()
         console.log('⚠️  Número de telefone associado à conta admin já existe — seed ignorado.');
         return;
     }
-    const passwordHash = await bcrypt.hash(process.env.SYSTEM_ADMIN_PASSWORD!, 10);
+    const passwordHash = await bcrypt.hash(process.env.SYSTEM_ADMIN_PASSWORD!, 12); // ✅ 5.12 FIX: custo padronizado para 12
 
     await prisma.$transaction(async (tx) => {
         const account = await tx.account.create({
@@ -43,7 +43,7 @@ async function seedAdmin()
 }).then(()=>{
     console.log('✅ Conta admin criada com sucesso.');
 }).catch((error)=>{
-    console.log('❌ Erro ao criar conta admin:', error);
+    console.error('❌ Erro ao criar conta admin:', error);
 })
 }
 

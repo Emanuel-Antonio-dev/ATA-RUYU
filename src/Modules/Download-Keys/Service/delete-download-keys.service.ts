@@ -8,7 +8,7 @@ import { hashKey } from "src/Common/Utils/generate-codes";
 export class DeleteDownloadKeyService {
   constructor(private readonly repository: IDownloadKeysRepositories) {}
 
-  async execute(params: Partial<{ id: string; usedByIp: string; key: string }>, credentials?:{sub: string, role: Role}): Promise<any>
+  async execute(params: Partial<{ id: string; usedByIp: string; key: string }>, credentials?:{sub: string, academyId: string | null, role: Role}): Promise<any>
   {
     try
     {   
@@ -39,7 +39,7 @@ export class DeleteDownloadKeyService {
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro, tente novamente")
     }
   }

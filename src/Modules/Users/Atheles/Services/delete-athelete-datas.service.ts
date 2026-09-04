@@ -13,13 +13,14 @@ class DeleteAtheleteService {
     private readonly repository: IAtheleRepositories,
   ) {}
 
-  async delete(id: string,credentials?: { sub: string; role: Role },)
+  async delete(id: string,credentials?: { sub: string; academyId: string | null; role: Role },)
   {
     try {
         if(!id) throw new NotFoundException("ID da atleta não informado.");
         const athlete = await this.repository.getAthleteDatas(id);
         if (!athlete) throw new NotFoundException("atleta não encontrado/a.");
-        if (credentials?.sub !== athlete.academy.id)
+        // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+        if (credentials?.academyId !== athlete.academy.id && credentials?.role !== Role.CENTRAL)
         {
             throw new ForbiddenException("Não tens permissão para eliminar este atleta.");
         }
@@ -34,7 +35,7 @@ class DeleteAtheleteService {
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
     }
   }

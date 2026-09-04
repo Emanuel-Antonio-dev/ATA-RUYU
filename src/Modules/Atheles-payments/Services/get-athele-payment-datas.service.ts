@@ -14,14 +14,15 @@ class GetAtheletePaymentsService {
     private readonly paymentsRepository: IAthelePaymentsRepositories
   ) {}
 
-  async get(filters:{limit: number, page: number, atheleId: string}, credentials?: { sub: string; role: Role},)
+  async get(filters:{limit: number, page: number, atheleId: string}, credentials?: { sub: string; academyId: string | null; role: Role},)
   {
     try {
       if(!filters.atheleId) throw new NotFoundException("Informe o(a) atleta.");
         const existsAthelete = await this.repository.getAthleteDatas(filters.atheleId);
 
         if (!existsAthelete) throw new NotFoundException("Atleta não encontrado(a).");
-        if(existsAthelete.academy.id !== credentials?.sub)
+        // ✅ V-05 FIX: comparar contra `academyId` (não `sub`)
+        if(existsAthelete.academy.id !== credentials?.academyId && credentials?.role !== Role.CENTRAL)
         {
             throw new UnauthorizedException("Você não tem permissão para acessar este recurso")
         }
@@ -36,7 +37,7 @@ class GetAtheletePaymentsService {
         {
           throw error
         }
-        console.log(error)
+        console.error(error)
         throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
     }
   }

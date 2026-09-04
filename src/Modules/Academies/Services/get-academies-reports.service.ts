@@ -19,11 +19,11 @@ class GetAcademiesReportsService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async get(credentials?: { sub: string; role: Role}) {
+  async get(credentials?: { sub: string; academyId: string | null; role: Role}) {
     try {
       
       if (credentials?.role === 'AFFILIATE') {
-        const result = await this.repository.getAffiliateReport(credentials?.sub);
+        const result = await this.repository.getAffiliateReport(credentials?.academyId!);
 
         if (!result) {
           throw new NotFoundException('De momento a sua academia está sem relatórios.');

@@ -14,11 +14,14 @@ class GetAcademyService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async get(id: string, credentials?: { sub: string; role: Role},)
+  async get(id: string, credentials?: { sub: string; academyId: string | null; role: Role},)
   {
     try {
       if(!id) throw new NotFoundException("Informe a academia.");
-      if (credentials?.sub !== id)
+      // ✅ V-05 FIX: comparar contra `academyId` + bypass para CENTRAL
+      // (antes a Central ficava bloqueada de ver qualquer academia,
+      // incluindo as afiliadas — ver §5.9 da auditoria).
+      if (credentials?.academyId !== id && credentials?.role !== Role.CENTRAL)
         {
           throw new ForbiddenException("Não tens permissão para ver os dados desta academia.");
         }
@@ -41,7 +44,7 @@ class GetAcademyService {
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
     }
   }

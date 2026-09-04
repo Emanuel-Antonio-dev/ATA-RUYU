@@ -59,5 +59,19 @@ class PrismaDownloadKeysRepositories implements IDownloadKeysRepositories
             data:{usedAt: data.usedAt, status: data.status, usedByIp: data.usedByIp},
         });
 }
+
+    // ✅ B-06 FIX: `updateMany` com o status ACTUAL na cláusula WHERE —
+    // dois pedidos concorrentes com a mesma chave só conseguem, entre os
+    // dois, que UM `count` volte 1; o outro recebe `count: 0` porque, no
+    // momento em que a sua escrita corre, o status já não é mais ACTIVE.
+    // Antes era um read-then-write sem condição — ambos os pedidos liam
+    // "ACTIVE" antes de qualquer escrita, e ambos conseguiam liberar o
+    // download com a mesma chave de uso único.
+    async markKeyAsUsedAtomic(id: string, usedByIp: string): Promise<{ count: number }> {
+        return await this.prisma.downloadKey.updateMany({
+            where: { id, status: "ACTIVE" },
+            data:  { status: "USED", usedAt: new Date(), usedByIp },
+        });
+    }
 }
 export {PrismaDownloadKeysRepositories}

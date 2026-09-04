@@ -150,71 +150,25 @@ class PrismaAcademiesRepositories implements IAcademiesRepositories
                 where,skip,
                 take:    limit,
                 orderBy: { createdAt: "desc" },
+                // ✅ V-01 FIX: esta listagem devolvia, para TODAS as
+                // academias — sem autenticação — email/telefone da conta e,
+                // para CADA atleta, nome, data de nascimento, telefone de
+                // emergência, foto, e o histórico completo de pagamentos,
+                // presenças e graduações, mais os dados financeiros da
+                // subscrição. Uma projecção mínima, própria para uma
+                // listagem pública/directório: nunca inclui `athletes`,
+                // `payments`, `attendances`, `graduations` nem
+                // `subscription`. Quem precisar dos dados completos de UMA
+                // academia usa `GET /academies/:id`, que já valida posse.
                 select: {
                     id:              true,
                     name:            true,
                     type:            true,
                     status:          true,
-                    affiliateNumber: true,
                     logoUrl:         true,
                     province:        true,
                     city:            true,
                     createdAt:       true,
-                    account: {
-                        select: {
-                            email:    true,
-                            phone:    true,
-                            isActive: true,
-                        },
-                    },
-                    athletes: {
-                        select: {
-                            id:       true,
-                            fullName: true,
-                            currentBelt: true,
-                            currentDegree: true,
-                            birthDate: true,
-                            affiliateCode: true,
-                            photoUrl: true,
-                            enrolledAt: true,
-                            emergencyPhone: true,
-                            graduations: {
-                                select: {
-                                    id: true,
-                                    fromBelt: true,
-                                    toBelt: true,
-                                    fromDegree: true,
-                                    toDegree: true,
-                                },
-                            },
-                            attendances: {
-                                select: {
-                                    id: true,
-                                    present: true,
-                                    classDate: true,
-                                },
-                            },
-                            payments: {
-                                select: {
-                                    id: true,
-                                    amount: true,
-                                    paidAt: true,
-                                    referenceMonth: true,
-                                    status: true,
-                                },
-                            },
-                            email:    true,
-                            phone:    true,
-                            isActive: true,
-                        },
-                    },subscription: {
-                        select: {
-                            status:          true,
-                            currentPeriodStart: true,
-                            amount: true,
-                            currentPeriodEnd: true,
-                        },
-                    },
                 },
             }),
         ]);

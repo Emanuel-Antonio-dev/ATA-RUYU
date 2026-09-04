@@ -5,8 +5,17 @@ import { HttpException, InternalServerErrorException } from "@nestjs/common";
 import * as crypto from 'node:crypto';
 import { PrismaService } from "src/lib/prisma.service";
 import { SendEmailService } from "src/Modules/Emails/send-email.service";
+import { hashKey } from "src/Common/Utils/generate-codes";
 
 import { RequestPasswordDto } from "../authentications.dto";
+
+// ✅ V-09 FIX: resposta genérica, sempre a mesma, exista ou não a conta —
+// evita a enumeração de emails registados (ver requestNewPassword abaixo).
+const GENERIC_RESPONSE = {
+    statusCode: 200,
+    success: true,
+    message: "Se este email estiver registado, enviamos instruções de recuperação para a caixa de entrada.",
+};
 
 @Injectable()
 class RequestNewPasswordService
@@ -25,9 +34,14 @@ class RequestNewPasswordService
         try
         {
             const existsAccount = await this.accountRepositories.getAccountDatas(undefined, data.email)
+            // ✅ V-09(a) FIX: antes lançava 404 para email inexistente e
+            // sucesso para email existente — combinado com a ausência de
+            // rate limiting (V-08), permitia mapear todos os emails
+            // registados na plataforma. Agora devolve sempre a mesma
+            // resposta; o trabalho real só acontece se a conta existir.
             if(!existsAccount)
             {
-                throw new NotFoundException("Não conseguimos encontrar esta conta.")
+                return GENERIC_RESPONSE;
             }
              const restPasswordToken = crypto.randomBytes(32).toString("hex")
             await this.prisma.$transaction(async(tx)=>{
@@ -41,8 +55,15 @@ class RequestNewPasswordService
                 {
                     throw new Error()
                 }
+                // ✅ V-09(b) FIX: o token era guardado em claro em
+                // tbl_tokens.token — qualquer leitura da BD (backup, acesso
+                // de operador, etc.) permitia tomar a conta directamente.
+                // Agora guarda-se sha256(token), exactamente como já era
+                // feito (correctamente) para as chaves de download — o
+                // valor em claro só existe no email enviado ao dono da
+                // conta, nunca em disco.
                 const registerToken = await this.authenticationRepositories.registerToken({
-                    token: restPasswordToken,
+                    token: hashKey(restPasswordToken),
                     token_type: "PASSWORD_RESET",
                     authenticationId: authentication.id,
                 }, tx)
@@ -53,7 +74,12 @@ class RequestNewPasswordService
             })
             await this.emailSender.sendEmail(data.email, "Pedido de recuperação de senha.", `<p>${restPasswordToken}</p>`)
 
-            return {statusCode: 200, success: true, message:`Enviamos um email para ${data.email}, por favor verifique a sua caixa de email`,  ...(process.env.NODE_ENV=="test" ? {token: restPasswordToken} : {})}
+            // ✅ V-09(c) FIX: removido o vazamento condicional do token na
+            // resposta HTTP quando NODE_ENV === "test" — uma variável de
+            // ambiente mal configurada em produção tornava-se tomada de
+            // conta trivial para qualquer email. Testes que precisem do
+            // token devem lê-lo directamente da base de dados de teste.
+            return GENERIC_RESPONSE;
 
         } catch (error: any)
         {
@@ -61,7 +87,7 @@ class RequestNewPasswordService
             {
                 throw error
             }
-            console.log(error)
+            console.error(error)
             throw new InternalServerErrorException("Ocorreu um erro interno, tente novamente.")
         }
     }

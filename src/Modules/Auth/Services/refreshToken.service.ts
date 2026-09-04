@@ -42,8 +42,9 @@ class RefreshTokenService
       throw new UnauthorizedException("Sessão expirada. Faça login novamente.");
     }
 
-    // 3. Decodifica o refresh token
-    const decodedToken = JwtOperations.VerifyToken(token);
+    // 3. Decodifica o refresh token — exige explicitamente typ "refresh":
+    // sem isto, um access token (ou temp token) também seria aceite aqui.
+    const decodedToken = JwtOperations.VerifyToken(token, "refresh");
     if (!decodedToken) {
       throw new UnauthorizedException("Token inválido.");
     }
@@ -55,8 +56,11 @@ class RefreshTokenService
 
     // 4. Gera apenas um novo accessToken
     // O refreshToken permanece o mesmo até expirar
+    // ✅ B-12 FIX: `subscriptionStatus` e `academyId` eram omitidos do novo
+    // access token — qualquer lógica dependente dessas claims comportava-se
+    // de forma diferente 15 minutos após o login (no primeiro refresh).
     const newAccessToken = await JwtOperations.GenerateToken(
-      { sub: decodedToken.sub, role: decodedToken.role },
+      { sub: decodedToken.sub, academyId: decodedToken.academyId, role: decodedToken.role, subscriptionStatus: decodedToken.subscriptionStatus },
       "access",
     );
 

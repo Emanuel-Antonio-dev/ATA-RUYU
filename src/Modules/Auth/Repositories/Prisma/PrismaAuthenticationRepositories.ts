@@ -79,7 +79,11 @@ class PrismaAuthenticationsRepositories implements IAuthenticationRepositories
         const client = tx ?? this.prisma;
         
         const activeAuthentications = await client.authentication.findMany({where: {used: false,
-            expireIn: {gt: new Date(),},OR: [params.email ? { temp_email: params.email } : undefined,params.phone_number ? { phone_number: params.phone_number } : undefined,].
+            // ✅ B-05 FIX: o campo no schema chama-se `temp_phone`, não
+            // `phone_number` — a query nunca encontrava nenhum registo por
+            // telefone, então um pedido de OTP concorrente não invalidava
+            // nenhuma autenticação anterior por telefone.
+            expireIn: {gt: new Date(),},OR: [params.email ? { temp_email: params.email } : undefined,params.phone_number ? { temp_phone: params.phone_number } : undefined,].
             filter(Boolean) as any,},include: {twoFactorAuth: true,},});
             if (!activeAuthentications.length)
                 {
@@ -97,8 +101,13 @@ class PrismaAuthenticationsRepositories implements IAuthenticationRepositories
         }
     }
         async findValidOtp(params: { email?: string; phone_number?: string }):Promise<any> {
+            // ✅ B-05 FIX: idem — `temp_phone_number` não existe no schema
+            // (é `temp_phone`). Um pedido de validação de OTP por telefone
+            // nunca encontrava o registo — rejeitava sempre com "código
+            // inválido" ou lançava erro do Prisma. A autenticação por
+            // telemóvel nunca chegou a funcionar.
             return this.prisma.twoFactorAuth.findFirst({where: {locked: false,authentication: {used: false,expireIn: { gt: new Date() },
-            OR: [params.email ? { temp_email: params.email } : undefined,params.phone_number ? { temp_phone_number: params.phone_number } : undefined,].filter(Boolean) as any,},
+            OR: [params.email ? { temp_email: params.email } : undefined,params.phone_number ? { temp_phone: params.phone_number } : undefined,].filter(Boolean) as any,},
         },
         include: {authentication: true},});}
         
