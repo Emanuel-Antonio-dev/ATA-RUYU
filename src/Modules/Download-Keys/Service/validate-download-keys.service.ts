@@ -50,7 +50,7 @@ export class ValidateDownloadKeyService {
        * pedido consegue `count === 1`; qualquer outro concorrente recebe
        * `count === 0`, mesmo que ambos tenham passado na leitura acima.
        */
-      const { count } = await this.repository.markKeyAsUsedAtomic(downloadKey.id, ip);
+      const { count } = await this.repository.markKeyAsUsedAtomic(downloadKey.id, ip!);
 
       if (count === 0) {
         throw new ForbiddenException("Esta chave já foi utilizada.");
