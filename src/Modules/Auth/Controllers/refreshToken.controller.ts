@@ -48,7 +48,20 @@ class RefreshTokenController {
   ) {
     const { refreshToken } = request.cookies;
     const result = await this.service.refreshToken(refreshToken);
-    
+
+    // ✅ FIX crítico ligado à rotação de refresh token: o serviço passou a
+    // devolver um refreshToken NOVO a cada chamada (ver refreshToken.service.ts),
+    // mas este controller nunca actualizava o cookie — o cliente continuaria
+    // a enviar o token antigo (já marcado como usado) no próximo pedido,
+    // disparando a detecção de reutilização e revogando todas as sessões
+    // logo no segundo refresh. O cookie tem de ser substituído aqui.
+    response.cookie("refreshToken", result.datas.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    });
+
     response.cookie("accessToken", result.datas.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

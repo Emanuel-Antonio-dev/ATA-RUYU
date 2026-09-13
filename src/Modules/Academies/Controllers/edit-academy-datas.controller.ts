@@ -11,6 +11,7 @@ import {
 } from '@nestjs/swagger';
 import { UpdateAcademyRequestDto } from '../Dtos/update-academy.dto';
 import { getUploaderOptions } from 'src/Common/Utils/multer-config';
+import { UploadMagicNumberInterceptor } from 'src/Common/Utils/upload-magic-number.interceptor';
 import { EditAcademyService } from '../Services/edit-academy-datas.service';
 import { Roles } from 'src/Common/Decorators/roles.decorator';
 import { Role } from 'src/Modules/Auth/Guards/roles.enum';
@@ -24,7 +25,7 @@ class EditAcademyController {
 
   @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN)
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('AcademyLogos', getUploaderOptions('AcademyLogos')))
+  @UseInterceptors(FileInterceptor('AcademyLogos', getUploaderOptions('AcademyLogos')), UploadMagicNumberInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Actualizar dados da academia' })
   @ApiBody({

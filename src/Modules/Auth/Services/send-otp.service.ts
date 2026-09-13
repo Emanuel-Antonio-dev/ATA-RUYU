@@ -4,6 +4,7 @@ import { OtpGeneratorService } from "src/Common/Utils/AuthenticationsProcols/2FA
 import { PrismaService } from "src/lib/prisma.service";
 import { InitAuthenticationsService } from "./init-authentications.service";
 import { SendEmailService } from "src/Modules/Emails/send-email.service";
+import { renderOtpCodeEmail } from "src/Modules/Emails/Templates/otp-code.template";
 
 @Injectable()
 class SendOtpCodeService
@@ -47,7 +48,7 @@ class SendOtpCodeService
             },{maxWait: 30000, timeout: 45000})
             if(email)
             {
-                await this.emailSender.sendEmail(email, "Verificação em duas etapas", `Seu codigo e ${transaction.datas?.otp_code}`)
+                await this.emailSender.sendEmail(email, "Verificação em duas etapas — ATA-RYU", renderOtpCodeEmail(transaction.datas?.otp_code as string))
                 return {status: transaction.success, statusCode: transaction.statusCode, message: `Acabamos de enviar um código de verificação para ${email}`, 
                     ...(process.env.NODE_ENV === "test" ? { otp_code: transaction.datas?.otp_code } : {})}
             }

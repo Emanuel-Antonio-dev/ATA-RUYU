@@ -32,12 +32,17 @@ import { SendOtpController } from "./Controllers/send-otp-code.controller";
 import { GetCurrentAcademyController } from "./Controllers/me.controller";
 import { GetCurrentAcademyService } from "./Services/get-current-academy.service";
 import { SubscriptionsModule } from "../Subscriptions/subscriptions.module";
+import { SubscriptionStatusGuard } from "./Guards/subscription-status.guard";
+import { AcademiesModule } from "../Academies/academies.module";
+import { CacheModule } from "../Cache/cache.module";
 
 @Module({
     imports:[
         AccountModule,
         EmailModule,
-        SubscriptionsModule
+        SubscriptionsModule,
+        AcademiesModule,
+        CacheModule
     ],
     controllers:[
         SignInController,
@@ -82,6 +87,10 @@ import { SubscriptionsModule } from "../Subscriptions/subscriptions.module";
         {
             provide: APP_GUARD,
             useClass: RolesGuard
+        },
+        {
+            provide: APP_GUARD,
+            useClass: SubscriptionStatusGuard
         }
     ],
     exports:[

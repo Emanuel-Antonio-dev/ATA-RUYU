@@ -15,6 +15,9 @@ export interface PendingOverduePayment {
   id: string;
   subscriptionId: string;
   dueDate: Date;
+  // ✅ acrescentado para o email de aviso do cron — evita um lookup extra
+  // por pagamento só para saber a que academia pertence.
+  academyId: string;
 }
 
 export abstract class ISubscriptionPaymentRepository {

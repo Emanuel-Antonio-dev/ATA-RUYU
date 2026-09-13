@@ -19,6 +19,7 @@ import { GetCurrentAcademyService } from "../Services/get-current-academy.servic
 import { Roles } from "src/Common/Decorators/roles.decorator";
 import { Role } from "../Guards/roles.enum";
 import { RequestWithCredentials } from "../Interfaces/interface";
+import { SkipSubscriptionCheck } from "src/Common/Decorators/skip-subscription-check.decorator";
 
 @ApiTags("Authentication")
 @ApiBearerAuth("accessToken")
@@ -27,6 +28,10 @@ class GetCurrentAcademyController {
   constructor(private readonly service: GetCurrentAcademyService) {}
 
   @Roles(Role.ADMIN_DEV, Role.AFFILIATE_ADMIN, Role.CENTRAL, Role.AFFILIATE)
+  // ✅ achado desta auditoria: uma academia suspensa precisa de conseguir
+  // ver o seu próprio estado (incluindo que está suspensa) em vez de
+  // receber um 403 genérico sem contexto do SubscriptionStatusGuard.
+  @SkipSubscriptionCheck()
   @Get("me")
   @ApiOperation({
     summary: "Obter dados da academia autenticada",

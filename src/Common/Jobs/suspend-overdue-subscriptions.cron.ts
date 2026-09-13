@@ -6,6 +6,8 @@ import { ISubscriptionRepository } from 'src/Modules/Subscriptions/Repositories/
 import { IAcademiesRepositories } from 'src/Modules/Academies/Repositories/IAcademies-repositories';
 import { PrismaService } from 'src/lib/prisma.service';
 import { AcademyStatus } from 'generated/prisma/enums';
+import { SendEmailService } from 'src/Modules/Emails/send-email.service';
+import { CacheService } from 'src/Modules/Cache/cache.service';
 
 @Injectable()
 export class SuspendOverdueSubscriptionsCron {
@@ -17,7 +19,13 @@ export class SuspendOverdueSubscriptionsCron {
     private readonly subscriptionRepo: ISubscriptionRepository,
     @Inject(IAcademiesRepositories)
     private readonly academyRepo: IAcademiesRepositories,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly emailService: SendEmailService,
+    // ✅ achado desta auditoria: o SubscriptionStatusGuard cacheia o
+    // status da academia por até 60s — sem invalidar aqui, uma academia
+    // suspensa por este cron continuaria a passar no guard até o cache
+    // expirar sozinho.
+    private readonly cacheService: CacheService,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_3AM) // depois dos dois anteriores
@@ -40,7 +48,28 @@ export class SuspendOverdueSubscriptionsCron {
             where: { id: sub.academyId },
             data: { status: AcademyStatus.SUSPENDED },
           });
+          this.cacheService.invalidateSubscription(sub.academyId);
           this.logger.warn(`Academia ${sub.academyId} suspensa (subscrição ${sub.id})`);
+
+          // ✅ achado desta auditoria: a academia era suspensa em silêncio —
+          // a única forma de descobrir era tentar fazer login e ver a
+          // sessão a falhar, sem nenhuma explicação. Notifica por email.
+          try {
+            const academy = await this.academyRepo.findAcademyById({ action: 'OnlyBasicsDatas' }, sub.academyId);
+            const email = academy?.account?.email;
+            if (email) {
+              await this.emailService.sendEmail(
+                email,
+                'A sua academia foi suspensa — Aliança do Tatame',
+                `<h1>A sua academia foi suspensa</h1>
+                 <p>A subscrição da academia <strong>${academy.name ?? ''}</strong> foi suspensa por falta de pagamento há mais de ${this.GRACE_DAYS} dias.</p>
+                 <p>O acesso à plataforma fica bloqueado até regularizar a situação. Contacte a Central para efectuar o pagamento e reactivar a conta.</p>`,
+              );
+            }
+          } catch (emailError) {
+            // uma falha ao notificar não pode impedir a suspensão em si
+            this.logger.error(`Falha ao enviar email de suspensão para a academia ${sub.academyId}`, emailError);
+          }
         }),
       );
 

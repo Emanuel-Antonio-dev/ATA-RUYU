@@ -41,6 +41,25 @@ class SignInService
             {
                 throw new UnauthorizedException("O registro da sua academia ainda não foi aprovada pela central, por favor aguarde.")
             }
+            // ✅ Achado desta auditoria: o cron de suspensão por falta de
+            // pagamento mudava `academy.status` para SUSPENDED, mas o
+            // login nunca verificava esse valor — só bloqueava PENDING.
+            // Uma academia suspensa continuava a conseguir criar sessões
+            // novas normalmente. Também cobre contas de utilizador
+            // (MASTER/INSTRUCTOR/AFFILIATE_ADMIN) ligadas a uma academia
+            // suspensa — não só a própria conta-academia.
+            if(account.academy && account.academy.status === "SUSPENDED")
+            {
+                throw new UnauthorizedException("A subscrição da sua academia está suspensa por falta de pagamento. Contacte a Central para regularizar.")
+            }
+            if(account.academy && account.academy.status === "REJECTED")
+            {
+                throw new UnauthorizedException("O registro da sua academia não foi aprovado.")
+            }
+            if(account.user?.academy && account.user.academy.status === "SUSPENDED")
+            {
+                throw new UnauthorizedException("A subscrição da sua academia está suspensa por falta de pagamento. Contacte a Central para regularizar.")
+            }
             // ✅ B-03 FIX: `account.academy.subscription` era acedido antes
             // de confirmar que `account.academy` existe — para qualquer
             // conta ligada a um User (ADMIN_DEV, MASTER, INSTRUCTOR,

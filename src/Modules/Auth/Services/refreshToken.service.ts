@@ -2,6 +2,8 @@ import { BadRequestException, HttpException, Inject, Injectable, InternalServerE
 import { IAuthenticationRepositories } from "../Repositories/IAuthentication-repositoties";
 import { PrismaService } from "src/lib/prisma.service";
 import { JwtOperations } from "src/Common/Utils/AuthenticationsProcols/JwtOperations/operations";
+import { InitAuthenticationsService } from "./init-authentications.service";
+import { RegisterTokensService } from "./register-tokens.service";
 @Injectable()
 class RefreshTokenService
 {
@@ -12,6 +14,8 @@ class RefreshTokenService
         @Inject(JwtOperations)
         private readonly jwtOperations: JwtOperations,
         private readonly prisma: PrismaService,
+        private readonly initAuthenticationsService: InitAuthenticationsService,
+        private readonly registerTokensService: RegisterTokensService,
     ){}
 
     async refreshToken(token: string) {
@@ -27,8 +31,24 @@ class RefreshTokenService
       throw new UnauthorizedException("Sessão inválida ou token não encontrado.");
     }
 
+    // ✅ Achado desta auditoria: não havia rotação de refresh token — o
+    // mesmo token era devolvido em todo refresh, válido pelos 7 dias
+    // inteiros. Um token roubado continuava utilizável até expirar, e não
+    // havia forma de detectar que isso tinha acontecido. Agora: cada
+    // refresh emite um refresh token NOVO e marca o antigo como usado. Se
+    // um token já marcado como usado for apresentado de novo, é sinal de
+    // que alguém está a tentar reutilizar um token já rodado (roubo) — a
+    // reacção é revogar TODAS as sessões da conta, forçando novo login em
+    // todos os dispositivos.
     if (storedToken.authentication.used) {
-      throw new UnauthorizedException("Token de sessão já utilizado.");
+      const accountId = storedToken.authentication.accountId;
+      if (accountId) {
+        await this.prisma.authentication.updateMany({
+          where: { accountId, used: false },
+          data:  { used: true },
+        });
+      }
+      throw new UnauthorizedException("Sessão inválida. Por segurança, todas as suas sessões foram encerradas — faça login novamente.");
     }
 
     // 2. Verifica se o refresh token ainda está dentro do TTL
@@ -54,19 +74,36 @@ class RefreshTokenService
       throw new UnauthorizedException("Sessão inválida — conta não encontrada.");
     }
 
-    // 4. Gera apenas um novo accessToken
-    // O refreshToken permanece o mesmo até expirar
+    // 4. Gera o novo par access+refresh
     // ✅ B-12 FIX: `subscriptionStatus` e `academyId` eram omitidos do novo
     // access token — qualquer lógica dependente dessas claims comportava-se
     // de forma diferente 15 minutos após o login (no primeiro refresh).
-    const newAccessToken = await JwtOperations.GenerateToken(
-      { sub: decodedToken.sub, academyId: decodedToken.academyId, role: decodedToken.role, subscriptionStatus: decodedToken.subscriptionStatus },
-      "access",
-    );
+    const payload = { sub: decodedToken.sub, academyId: decodedToken.academyId, role: decodedToken.role, subscriptionStatus: decodedToken.subscriptionStatus };
+    const newAccessToken  = JwtOperations.GenerateToken(payload, "access");
+    const newRefreshToken = JwtOperations.GenerateToken(payload, "refreshToken");
 
-    // Calcula o tempo restante do refresh token actual
-    //const remainingTTL = storedToken.authentication.expireIn.getTime() - Date.now();
-    //const remainingDays = Math.ceil(remainingTTL / (1000 * 60 * 60 * 24));
+    // Rotação: marca o refresh actual como usado e regista o par novo
+    // numa única transação — se o registo do novo token falhar, o antigo
+    // não fica marcado como usado sem substituto (evita perder a sessão).
+    await this.prisma.$transaction(async (tx) => {
+      await tx.authentication.update({
+        where: { id: storedToken.authentication.id },
+        data:  { used: true },
+      });
+
+      const newAuthentication = await this.initAuthenticationsService.initAuthentication({
+        type: "by_token",
+        used: false,
+        expireIn: new Date(Date.now() + this.REFRESH_TOKEN_TTL),
+        accountId,
+      }, tx);
+
+      await this.registerTokensService.registerTokens({
+        token: newRefreshToken,
+        token_type: "REFRESH",
+        authenticationId: newAuthentication.id,
+      }, tx);
+    });
 
     return {
       success:    true,
@@ -74,7 +111,7 @@ class RefreshTokenService
       message:    "Novo token de acesso gerado com sucesso.",
       datas: {
         accessToken:       newAccessToken,
-        refreshToken:      token,        // devolve o mesmo refresh token
+        refreshToken:      newRefreshToken,
       },
     };
 

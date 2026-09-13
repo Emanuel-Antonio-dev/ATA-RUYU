@@ -20,11 +20,13 @@ import { GetAcademiesReportsService } from './Services/get-academies-reports.ser
 import {AcademiesReportsController} from './Controllers/get-academies-reports.controller'
 import { CacheService } from '../Cache/cache.service';
 import { CacheModule } from '../Cache/cache.module';
+import { EmailModule } from '../Emails/emails.module';
 
 @Module({
   imports: [
     CacheModule,
-    AccountModule
+    AccountModule,
+    EmailModule
   ],
   controllers: [
     RegisterAcademyController,

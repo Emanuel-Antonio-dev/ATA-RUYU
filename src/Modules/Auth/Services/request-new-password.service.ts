@@ -6,6 +6,7 @@ import * as crypto from 'node:crypto';
 import { PrismaService } from "src/lib/prisma.service";
 import { SendEmailService } from "src/Modules/Emails/send-email.service";
 import { hashKey } from "src/Common/Utils/generate-codes";
+import { renderPasswordResetEmail } from "src/Modules/Emails/Templates/password-reset.template";
 
 import { RequestPasswordDto } from "../authentications.dto";
 
@@ -72,7 +73,14 @@ class RequestNewPasswordService
                     throw new Error()
                 }
             })
-            await this.emailSender.sendEmail(data.email, "Pedido de recuperação de senha.", `<p>${restPasswordToken}</p>`)
+            // ✅ achado desta auditoria: o email mostrava só o token cru
+            // (`<p>${token}</p>`), sem explicação nem link clicável — o
+            // utilizador tinha de copiar o token manualmente para algum
+            // sítio. Agora usa o template com botão, com o token embutido
+            // no link. Requer a env var FRONTEND_URL (ex:
+            // https://app.ata-ryu.com).
+            const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${restPasswordToken}`
+            await this.emailSender.sendEmail(data.email, "Recuperação de senha — ATA-RYU", renderPasswordResetEmail(resetUrl))
 
             // ✅ V-09(c) FIX: removido o vazamento condicional do token na
             // resposta HTTP quando NODE_ENV === "test" — uma variável de

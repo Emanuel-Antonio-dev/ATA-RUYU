@@ -13,13 +13,16 @@ import { CancelSubscriptionService } from './Services/cancel-payment-subscriptio
 import { GetSubscriptionPaymentHistoryService } from './Services/find-payments-hystory.service';
 import { PrismaService } from 'src/lib/prisma.service';
 import { AcademiesModule } from '../Academies/academies.module';
+import { CacheModule } from '../Cache/cache.module';
+import { EmailModule } from '../Emails/emails.module';
 import { StartTrialSubscriptionService } from './Services/start-trial-subscription.service';
 import { MarkOverduePaymentsCron } from 'src/Common/Jobs/mark-overdue-payments.cron';
 import { ExpireSubscriptionsCron } from 'src/Common/Jobs/expire-subscriptions.cron';
 import { SuspendOverdueSubscriptionsCron } from 'src/Common/Jobs/suspend-overdue-subscriptions.cron';
+import { AuditLogService } from 'src/Common/Utils/audit-log.service';
 
 @Module({
-  imports: [AcademiesModule],
+  imports: [AcademiesModule, CacheModule, EmailModule],
   controllers: [SubscriptionController],
   providers: [
     {
@@ -41,7 +44,8 @@ import { SuspendOverdueSubscriptionsCron } from 'src/Common/Jobs/suspend-overdue
     StartTrialSubscriptionService,
     MarkOverduePaymentsCron,
     ExpireSubscriptionsCron,
-    SuspendOverdueSubscriptionsCron
+    SuspendOverdueSubscriptionsCron,
+    AuditLogService,
   ],
   exports: [
     RegisterSubscriptionService,

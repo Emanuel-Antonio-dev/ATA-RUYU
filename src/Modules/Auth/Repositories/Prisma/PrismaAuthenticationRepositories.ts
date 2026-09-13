@@ -12,7 +12,7 @@ class PrismaAuthenticationsRepositories implements IAuthenticationRepositories
 
     async signIn(datas: AutehticationsDto, tx?: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>
     {
-        return await this.prisma.account.findUnique({where:{email: datas.email, isActive: true}, include:{authentications: true, academy: {include:{subscription: true}}, user: true}})
+        return await this.prisma.account.findUnique({where:{email: datas.email, isActive: true}, include:{authentications: true, academy: {include:{subscription: true}}, user: {include: {academy: true}}}})
     }
 
     async initAuthentication(datas: AuthenticationDatas, tx: Omit<Prisma.TransactionClient, "$transaction">): Promise<any>

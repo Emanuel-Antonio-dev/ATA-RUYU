@@ -24,6 +24,12 @@ export const CACHE_TTL = {
   AUTH_TOKEN: 120,
   TWO_FACTOR: 120,
 
+  // 🚦 Verificação de status de academia/subscrição em cada pedido
+  // (SubscriptionStatusGuard) — curto de propósito: uma suspensão deve
+  // reflectir-se rapidamente, não só na próxima vez que o cache expirar
+  // por outro motivo.
+  ACADEMY_STATUS_CHECK: 60,
+
   // 📥 Download keys
   DOWNLOAD_KEY: 300,
 

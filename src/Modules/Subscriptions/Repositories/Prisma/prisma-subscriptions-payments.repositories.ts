@@ -53,8 +53,14 @@ export class PrismaSubscriptionPaymentRepository implements ISubscriptionPayment
         id: true,
         subscriptionId: true,
         dueDate: true,
+        subscription: { select: { academyId: true } },
       },
-    });
+    }).then((rows) => rows.map((r) => ({
+      id: r.id,
+      subscriptionId: r.subscriptionId,
+      dueDate: r.dueDate,
+      academyId: r.subscription.academyId,
+    })));
   }
 
   findPendingBySubscription(subscriptionId: string) {

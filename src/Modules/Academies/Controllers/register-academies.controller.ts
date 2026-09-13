@@ -4,6 +4,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestj
 import { RegisterAcademyService } from '../Services/register-academy.service';
 import { CreateAcademyRequestDto } from '../Dtos/create-academy.dto';
 import { getUploaderOptions } from 'src/Common/Utils/multer-config';
+import { UploadMagicNumberInterceptor } from 'src/Common/Utils/upload-magic-number.interceptor';
 import { PublicRoute } from 'src/Common/Decorators/public.decorator';
 
 @ApiTags('Academies')
@@ -13,7 +14,7 @@ export class RegisterAcademyController {
 
   @PublicRoute()  
   @Post()
-  @UseInterceptors(FileInterceptor('AcademyLogos', getUploaderOptions('AcademyLogos'))) // 👈 passa as opções do teu multer
+  @UseInterceptors(FileInterceptor('AcademyLogos', getUploaderOptions('AcademyLogos')), UploadMagicNumberInterceptor) // 👈 passa as opções do teu multer
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Registrar uma nova academia',

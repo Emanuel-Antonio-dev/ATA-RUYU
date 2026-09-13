@@ -1,6 +1,6 @@
 // Controllers/set-academy-status.controller.ts
 
-import { Controller, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Patch, Param, Body, Req } from '@nestjs/common';
 import {
   ApiTags, ApiOperation, ApiResponse,
   ApiBearerAuth, ApiBody,
@@ -9,6 +9,7 @@ import { AcademyStatus } from 'generated/prisma/client';
 import { SetAcademyService } from '../Services/set-academy-status.service';
 import { Roles } from 'src/Common/Decorators/roles.decorator';
 import { Role } from 'src/Modules/Auth/Guards/roles.enum';
+import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
 
 @ApiTags('Academies')
 @ApiBearerAuth("accessToken")
@@ -38,6 +39,7 @@ class SetAcademyStatusController {
   async set(
     @Param('id') id: string,
     @Body('status') status: AcademyStatus,
+    @Req() req: RequestWithCredentials,
   ) {
     return this.service.set(id, status);
   }

@@ -30,6 +30,7 @@ import { RegisterSubscriptionService } from '../Services/register-subscription.s
 import { Roles } from 'src/Common/Decorators/roles.decorator';
 import { Role } from 'src/Modules/Auth/Guards/roles.enum';
 import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
+import { SkipSubscriptionCheck } from 'src/Common/Decorators/skip-subscription-check.decorator';
 
   @ApiTags('Subscriptions')
   @ApiBearerAuth('accessToken')
@@ -83,8 +84,8 @@ import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
     @ApiOperation({ summary: 'Confirmar pagamento' })
     @ApiParam({ name: 'paymentId', example: 'payment_123' })
     @ApiResponse({ status: 200, description: 'Pagamento confirmado' })
-    async confirmPayment(@Param('paymentId') paymentId: string) {
-      return this.confirmPaymentService.execute(paymentId);
+    async confirmPayment(@Param('paymentId') paymentId: string, @Req() req: RequestWithCredentials) {
+      return this.confirmPaymentService.execute(paymentId, req.credentials);
     }
   
     // ─────────────────────────────────────────────────────────────
@@ -92,6 +93,10 @@ import { RequestWithCredentials } from 'src/Modules/Auth/Interfaces/interface';
     // ─────────────────────────────────────────────────────────────
   
     @Roles(Role.CENTRAL, Role.AFFILIATE, Role.AFFILIATE_ADMIN, Role.ADMIN_DEV)
+    // ✅ achado desta auditoria: uma academia suspensa precisa de continuar
+    // a conseguir cancelar a própria subscrição (não faria sentido bloquear
+    // isto só porque está suspensa).
+    @SkipSubscriptionCheck()
     @Patch(':subscriptionId/cancel')
     @ApiOperation({ summary: 'Cancelar subscrição' })
     @ApiParam({ name: 'subscriptionId', example: 'sub_123' })
